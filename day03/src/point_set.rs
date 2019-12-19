@@ -43,3 +43,23 @@ impl PointSet {
         return old;
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::PointSet;
+    use crate::geom::Point;
+    use quickcheck::*;
+
+    impl Arbitrary for Point {
+        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+            let (x, y) = Arbitrary::arbitrary(g);
+            Point { x, y }
+        }
+    }
+
+    quickcheck! {
+        fn qc_empty_contains_nothing(p: Point) -> bool {
+            !PointSet::new().contains(p)
+        }
+    }
+}
