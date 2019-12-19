@@ -182,7 +182,7 @@ impl<Path> Iterator for WalkMany<Path>
 
 #[cfg(test)]
 mod test {
-    use super::{Point, Move, Dir, Len};
+    use super::{Point, Dir, Len};
     use ::quickcheck::*;
     use quickcheck_macros::quickcheck;
     use std::collections::HashSet;
@@ -290,11 +290,11 @@ mod test {
 
     #[quickcheck]
     fn qc_walk_many_len(p: Point, dls: Vec<(Dir, Len)>) -> bool {
-        if (dls.len() == 0) {
+        if dls.len() == 0 {
             return true;
         }
         let obs_len: Len = p.walk_many(dls.iter().cloned()).map(|_| 1 as Len).sum();
-        let exp_len: Len = dls.iter().map(|&(d, l)| l).sum();
+        let exp_len: Len = dls.iter().map(|&(_d, l)| l).sum();
         obs_len == exp_len
     }
 
@@ -305,7 +305,7 @@ mod test {
 
     #[quickcheck]
     fn qc_walk_many_rev(p: Point, dls: Vec<(Dir, Len)>) -> bool {
-        if (dls.len() == 0) {
+        if dls.len() == 0 {
             return true;
         }
         let q = dls.iter().fold(p, |q, &(d, l)| endpt(q, d, l));
