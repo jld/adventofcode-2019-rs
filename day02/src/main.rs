@@ -1,10 +1,12 @@
+use std::io::{stdin, prelude::*};
 use std::iter::IntoIterator;
+use std::str::FromStr;
 
 type Num = usize;
 
 struct Intcode {
-    pc: usize,
-    mem: Vec<Num>,
+    pub pc: usize,
+    pub mem: Vec<Num>,
 }
 
 impl Intcode {
@@ -40,14 +42,22 @@ impl Intcode {
     pub fn run(&mut self) {
         while self.step() { }
     }
-
-    pub fn get_mem(&self) -> &[Num] {
-        &self.mem
-    }
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let mem =
+        stdin.lock()
+             .split(b',')
+             .map(|r| r.expect("I/O error reading stdin"))
+             .map(|b| String::from_utf8(b).expect("encoding error on stdin"))
+             .map(|s| Num::from_str(s.trim())
+                  .unwrap_or_else(|e| panic!("bad number {:?}: {}", s, e)));
+    let mut cpu = Intcode::new(mem);
+    cpu.mem[1] = 12;
+    cpu.mem[2] = 2;
+    cpu.run();
+    println!("{}", cpu.mem[0]);
 }
 
 #[cfg(test)]
@@ -57,7 +67,7 @@ mod test {
     fn case1(before: &[Num], after: &[Num]) {
         let mut cpu = Intcode::new(before.iter().cloned());
         cpu.run();
-        assert_eq!(cpu.get_mem(), after);
+        assert_eq!(&cpu.mem as &[Num], after);
     }
 
     #[test]
