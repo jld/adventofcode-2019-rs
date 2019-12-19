@@ -44,6 +44,18 @@ impl Intcode {
     }
 }
 
+fn compute(mem: impl IntoIterator<Item = Num>, noun: Num, verb: Num) -> Num {
+    let mut cpu = Intcode::new(mem);
+    cpu.mem[1] = noun;
+    cpu.mem[2] = verb;
+    cpu.run();
+    return cpu.mem[0];
+}
+
+fn part1(mem: impl IntoIterator<Item = Num>) {
+    println!("{}", compute(mem, 12, 2));
+}
+
 fn main() {
     let stdin = stdin();
     let mem =
@@ -53,11 +65,7 @@ fn main() {
              .map(|b| String::from_utf8(b).expect("encoding error on stdin"))
              .map(|s| Num::from_str(s.trim())
                   .unwrap_or_else(|e| panic!("bad number {:?}: {}", s, e)));
-    let mut cpu = Intcode::new(mem);
-    cpu.mem[1] = 12;
-    cpu.mem[2] = 2;
-    cpu.run();
-    println!("{}", cpu.mem[0]);
+    part1(mem);
 }
 
 #[cfg(test)]
