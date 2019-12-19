@@ -35,7 +35,8 @@ impl PointSet {
         *grid_ptr |= mask;
         return !old;
     }
-    
+
+    #[allow(dead_code)]
     pub fn remove(&mut self, p: Point) -> bool {
         let (key, mask) = split(p);
         let grid_ptr = self.inner.entry(key).or_insert(0);

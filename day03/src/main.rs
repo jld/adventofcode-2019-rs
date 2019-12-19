@@ -1,6 +1,7 @@
 mod geom;
 mod point_set;
 
+use std::io::{stdin, prelude::*};
 use std::str::FromStr;
 
 use crate::geom::{Point,Dir,Len};
@@ -39,7 +40,11 @@ fn part1(s: &str, q: &str) -> Len {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let mut lines = stdin.lock().lines().map(|r| r.expect("I/O error reading stdin"));
+    let l0 = lines.next().expect("no first input line");
+    let l1 = lines.next().expect("no second input line");
+    println!("{}", part1(&l0, &l1));
 }
 
 #[cfg(test)]

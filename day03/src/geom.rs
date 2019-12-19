@@ -14,6 +14,7 @@ impl Point {
         Self { x: 0, y: 0 }
     }
 
+    #[allow(dead_code)]
     pub fn walk(self, dir: Dir, len: Len) -> impl Iterator<Item = Point> {
         Walker::new(self, dir, len)
     }
@@ -99,7 +100,7 @@ impl Dir {
             Dir::Lf => Move { dx: -1, dy: 0 },
             Dir::Dn => Move { dx: 0, dy: -1 },
         }
-    } 
+    }
 
     pub fn from_char(ch: char) -> Option<Dir> {
         match ch {
@@ -117,7 +118,7 @@ struct Walker {
     here: Point,
     dir: Move,
     len: Len,
-} 
+}
 
 impl Iterator for Walker {
     type Item = Point;
@@ -206,7 +207,7 @@ mod test {
     fn endpt(p: Point, d: Dir, l: Len) -> Point {
         p + d.to_move() * l
     }
-    
+
     fn is_unique<I>(stuff: I) -> bool
         where I: IntoIterator,
               I::Item: Hash + Eq
@@ -248,7 +249,7 @@ mod test {
     fn selftest_dir_rev_rev(d: Dir) -> bool {
         dir_rev(dir_rev(d)) == d
     }
-    
+
     #[quickcheck]
     fn qc_mov_len1(d: Dir, l: Len) -> bool {
         (d.to_move() * l).len() == l
