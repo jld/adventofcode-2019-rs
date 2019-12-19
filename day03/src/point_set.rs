@@ -48,7 +48,8 @@ impl PointSet {
 mod test {
     use super::PointSet;
     use crate::geom::Point;
-    use quickcheck::*;
+    use ::quickcheck::*;
+    use quickcheck_macros::quickcheck;
 
     impl Arbitrary for Point {
         fn arbitrary<G: Gen>(g: &mut G) -> Self {
@@ -57,9 +58,8 @@ mod test {
         }
     }
 
-    quickcheck! {
-        fn qc_empty_contains_nothing(p: Point) -> bool {
-            !PointSet::new().contains(p)
-        }
+    #[quickcheck]
+    fn qc_empty_contains_nothing(p: Point) -> bool {
+        !PointSet::new().contains(p)
     }
 }
