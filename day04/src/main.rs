@@ -1,3 +1,5 @@
+use std::env::args;
+use std::str::FromStr;
 use std::string::ToString;
 
 fn has_adj(bs: &[u8]) -> bool {
@@ -14,7 +16,11 @@ fn pwd_check(n: u32) -> bool {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut nums = args().skip(1).map(|s| u32::from_str(&s).unwrap());
+    let lb = nums.next().expect("no lower bound");
+    let ub = nums.next().expect("no upper bound");
+    let n: u32 = (lb..=ub).filter(|&n| pwd_check(n)).map(|_| 1u32).sum();
+    println!("{}", n);
 }
 
 
