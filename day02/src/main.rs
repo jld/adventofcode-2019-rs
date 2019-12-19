@@ -1,6 +1,8 @@
+use std::env::args;
 use std::io::{stdin, prelude::*};
 use std::iter::IntoIterator;
 use std::str::FromStr;
+use std::process::exit;
 
 type Num = usize;
 
@@ -56,6 +58,21 @@ fn part1(mem: impl IntoIterator<Item = Num>) {
     println!("{}", compute(mem, 12, 2));
 }
 
+fn part2(mem: impl IntoIterator<Item = Num>) {
+    const MOON: Num = 19690720;
+    
+    let mem: Vec<Num> = mem.into_iter().collect();
+    for noun in 0..=99 {
+        for verb in 0..=99 {
+            if compute(mem.iter().cloned(), noun, verb) == MOON {
+                println!("{}", 100 * noun + verb);
+                return;
+            }
+        }
+    }
+    panic!("That's no moon!");
+}
+
 fn main() {
     let stdin = stdin();
     let mem =
@@ -65,7 +82,14 @@ fn main() {
              .map(|b| String::from_utf8(b).expect("encoding error on stdin"))
              .map(|s| Num::from_str(s.trim())
                   .unwrap_or_else(|e| panic!("bad number {:?}: {}", s, e)));
-    part1(mem);
+    match args().nth(1).as_ref().map(|s| s as &str) { // sigh
+        Some("1") => part1(mem),
+        Some("2") => part2(mem),
+        _ => {
+            eprintln!("Usage: {} <part #>", args().nth(0).unwrap());
+            exit(1)
+        }
+    }
 }
 
 #[cfg(test)]
