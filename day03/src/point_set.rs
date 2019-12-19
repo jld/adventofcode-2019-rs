@@ -13,6 +13,7 @@ fn split(p: Point) -> (Point, BitSet) {
     (Point { x: xh, y: yh }, 1 << b)
 }
 
+#[derive(Clone, Debug)]
 pub struct PointSet {
     inner: HashMap<Point, BitSet>
 }
@@ -61,5 +62,81 @@ mod test {
     #[quickcheck]
     fn qc_empty_contains_nothing(p: Point) -> bool {
         !PointSet::new().contains(p)
+    }
+
+    #[quickcheck]
+    fn qc_empty_insert(p: Point) -> bool {
+        !PointSet::new().insert(p)
+    }
+
+    #[quickcheck]
+    fn qc_empty_remove(p: Point) -> bool {
+        !PointSet::new().remove(p)
+    }
+
+    #[quickcheck]
+    fn qc_insert_contains_true(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.contains(p)
+    }
+
+    #[quickcheck]
+    fn qc_insert_insert_true(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.insert(p)
+    }
+
+    #[quickcheck]
+    fn qc_insert_remove_true(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.remove(p)
+    }
+
+    #[quickcheck]
+    fn qc_insert_contains_false(p: Point, q: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        !ps.contains(q) || p == q
+    }
+
+    #[quickcheck]
+    fn qc_insert_insert_false(p: Point, q: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        !ps.insert(q) || p == q
+    }
+
+    #[quickcheck]
+    fn qc_insert_remove_false(p: Point, q: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        !ps.remove(q) || p == q
+    }
+
+    #[quickcheck]
+    fn qc_insert_remove_contains_false(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.remove(p);
+        !ps.contains(p)
+    }
+
+    #[quickcheck]
+    fn qc_insert_remove_contains_true(p: Point, q: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.remove(q);
+        ps.contains(p) || p == q
+    }
+
+    #[quickcheck]
+    fn qc_insert2_contains_both(p: Point, q: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.insert(q);
+        ps.contains(p) && ps.contains(q)
     }
 }
