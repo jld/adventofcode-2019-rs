@@ -1,3 +1,5 @@
+use std::io::{stdin, prelude::*};
+
 use intcode::{Computer, Device, IOError, Word};
 
 fn permutations(n: Word) -> Vec<Vec<Word>> {
@@ -57,7 +59,15 @@ fn amplify(cpu: &Computer, phases: &[Word]) -> Word {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
+    let cpu = Computer::from_str(&prog).expect("parse error");
+    let best = permutations(5)
+        .into_iter()
+        .map(|p| amplify(&cpu, &p))
+        .max()
+        .unwrap();
+    println!("{}", best);
 }
 
 #[cfg(test)]
