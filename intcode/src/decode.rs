@@ -10,6 +10,7 @@ pub struct Insn {
 pub enum Mode {
     Position,
     Immediate,
+    Relative,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,6 +23,7 @@ pub enum Opcode {
     Jz,
     CmpLt,
     CmpEq,
+    SetBase,
     Halt,
 }
 
@@ -48,6 +50,7 @@ impl Mode {
         match w {
             0 => Ok(Mode::Position),
             1 => Ok(Mode::Immediate),
+            2 => Ok(Mode::Relative),
             _ => Err(ModeFault::Unknown(w))
         }
     }
@@ -64,6 +67,7 @@ impl Opcode {
             6 => Ok(Opcode::Jz),
             7 => Ok(Opcode::CmpLt),
             8 => Ok(Opcode::CmpEq),
+            9 => Ok(Opcode::SetBase),
             99 => Ok(Opcode::Halt),
             _ => Err(OpcodeFault::Unknown(w))
         }
@@ -73,7 +77,7 @@ impl Opcode {
         match self {
             Opcode::Add | Opcode::Mul | Opcode::CmpLt | Opcode::CmpEq => 4,
             Opcode::Jnz | Opcode::Jz => 3,
-            Opcode::In | Opcode::Out => 2,
+            Opcode::In | Opcode::Out | Opcode::SetBase => 2,
             Opcode::Halt => 1,
         }
     }
@@ -113,16 +117,16 @@ mod test {
     fn test_errors() {
         assert_eq!(Insn::decode(0),
                    Err(DecodeFault::Opcode(OpcodeFault::Unknown(0))));
-        assert_eq!(Insn::decode(21),
-                   Err(DecodeFault::Opcode(OpcodeFault::Unknown(21))));
-        assert_eq!(Insn::decode(201),
-                   Err(DecodeFault::Mode{ param: 0, fault: ModeFault::Unknown(2)}));
-        assert_eq!(Insn::decode(2001),
-                   Err(DecodeFault::Mode{ param: 1, fault: ModeFault::Unknown(2)}));
-        assert_eq!(Insn::decode(20001),
-                   Err(DecodeFault::Mode{ param: 2, fault: ModeFault::Unknown(2)}));
-        assert_eq!(Insn::decode(200001),
-                   Err(DecodeFault::ReservedNonZero(2)));
+        assert_eq!(Insn::decode(31),
+                   Err(DecodeFault::Opcode(OpcodeFault::Unknown(31))));
+        assert_eq!(Insn::decode(301),
+                   Err(DecodeFault::Mode{ param: 0, fault: ModeFault::Unknown(3)}));
+        assert_eq!(Insn::decode(3001),
+                   Err(DecodeFault::Mode{ param: 1, fault: ModeFault::Unknown(3)}));
+        assert_eq!(Insn::decode(30001),
+                   Err(DecodeFault::Mode{ param: 2, fault: ModeFault::Unknown(3)}));
+        assert_eq!(Insn::decode(300001),
+                   Err(DecodeFault::ReservedNonZero(3)));
         assert_eq!(Insn::decode(-1),
                    Err(DecodeFault::Negative(-1)));
         assert_eq!(Insn::decode(Word::min_value()),

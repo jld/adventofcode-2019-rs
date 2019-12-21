@@ -151,4 +151,36 @@ mod test {
                         else { 1001 }
                     });
     }
+
+    #[test]
+    fn d9_selfrep() {
+        let prog = vec![109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99];
+        let mut cpu = Computer::new(prog.clone());
+        let mut dev = TestDev::new(vec![]);
+        cpu.run(&mut dev).unwrap();
+        dev.expect(prog);
+    }
+
+    #[test]
+    fn d9_bigmul() {
+        struct Dev16;
+        impl Device for Dev16 {
+            fn input(&mut self) -> Result<Word, IOError> { Err(IOError) }
+            fn output(&mut self, val: Word) -> Result<(), IOError> {
+                let pval = format!("{}", val);
+                Ok(assert_eq!(pval.len(), 16, "bad value: {}", val))
+            }
+        }
+
+        let mut cpu = Computer::new(vec![1102,34915192,34915192,7,4,7,99,0]);
+        cpu.run(&mut Dev16).unwrap();
+    }
+
+    #[test]
+    fn d9_biglit() {
+        let mut cpu = Computer::from_str("104,1125899906842624,99").unwrap();
+        let mut dev = TestDev::new(vec![]);
+        cpu.run(&mut dev).unwrap();
+        dev.expect(vec![1125899906842624]);
+    }
 }

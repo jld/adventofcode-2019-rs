@@ -28,7 +28,14 @@ pub enum ExecFault {
     Mem(MemFault),
     WriteImmediate,
     IO(IOError),
-    Overflow(Opcode, Word, Word),
+    Overflow(ArithOp, Word, Word),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArithOp {
+    Add,
+    Mul,
+    Lea,
 }
 
 impl From<DecodeFault> for ExecFault {
@@ -52,6 +59,7 @@ impl From<IOError> for ExecFault {
 #[derive(Clone)]
 pub struct Computer {
     pc: Word,
+    base: Word,
     mem: Vec<Word>,
 }
 
@@ -79,17 +87,17 @@ fn setcc(b: bool) -> Word {
 }
 
 fn alu_add(x: Word, y: Word) -> Result<Word, ExecFault> {
-    x.checked_add(y).ok_or(ExecFault::Overflow(Opcode::Add, x, y))
+    x.checked_add(y).ok_or(ExecFault::Overflow(ArithOp::Add, x, y))
 }
 
 fn alu_mul(x: Word, y: Word) -> Result<Word, ExecFault> {
-    x.checked_mul(y).ok_or(ExecFault::Overflow(Opcode::Mul, x, y))
+    x.checked_mul(y).ok_or(ExecFault::Overflow(ArithOp::Mul, x, y))
 }
 
 impl Computer {
     pub fn new(mem: Vec<Word>) -> Self {
         assert!(mem.len() - 1 <= Word::max_value() as usize);
-        Self { pc: 0, mem }
+        Self { pc: 0, base: 0, mem }
     }
 
     pub fn from_str(s: &str) -> Result<Self, ParseError> {
@@ -97,9 +105,12 @@ impl Computer {
     }
 
     fn xread(&self, addr: Word, mode: MemMode) -> Result<Word, MemFault> {
-        self.mem.get(addr as usize)
-                .ok_or(MemFault{ addr, mode })
-                .map(|ptr| *ptr)
+        if addr < 0 {
+            return Err(MemFault{ addr, mode });
+        }
+        Ok(self.mem.get(addr as usize)
+           .map(|ptr| *ptr)
+           .unwrap_or(0))
     }
 
     fn iread(&self, pcrel: Word) -> Result<Word, MemFault> {
@@ -111,9 +122,18 @@ impl Computer {
     }
 
     pub fn write(&mut self, addr: Word, val: Word) -> Result<(), MemFault> {
-        self.mem.get_mut(addr as usize)
-                .ok_or(MemFault{ addr, mode: MemMode::DWrite })
-                .map(|ptr| *ptr = val)
+        if addr < 0 {
+            return Err(MemFault{ addr, mode: MemMode::DWrite });
+        }
+        let uaddr = addr as usize;
+        if uaddr >= self.mem.len() {
+            self.mem.resize(uaddr + 1, 0);
+        }
+        Ok(self.mem[uaddr] = val)
+    }
+
+    fn lea_rel(&self, field: Word) -> Result<Word, ExecFault> {
+        self.base.checked_add(field).ok_or(ExecFault::Overflow(ArithOp::Lea, self.base, field))
     }
 
     fn read_param(&self, insn: &Insn, idx: usize) -> Result<Word, ExecFault> {
@@ -121,6 +141,7 @@ impl Computer {
         match insn.modes[idx] {
             Mode::Immediate => Ok(field),
             Mode::Position => Ok(self.read(field)?),
+            Mode::Relative => Ok(self.read(self.lea_rel(field)?)?),
         }
     }
 
@@ -129,6 +150,7 @@ impl Computer {
         match insn.modes[idx] {
             Mode::Immediate => Err(ExecFault::WriteImmediate),
             Mode::Position => Ok(self.write(field, val)?),
+            Mode::Relative => Ok(self.write(self.lea_rel(field)?, val)?),
         }
     }
 
@@ -164,6 +186,8 @@ impl Computer {
                 self.write_param(&insn, 2,
                                  setcc(self.read_param(&insn, 0)? ==
                                        self.read_param(&insn, 1)?)),
+            Opcode::SetBase =>
+                Ok(self.base += self.read_param(&insn, 0)?),
             Opcode::Halt =>
                 return Ok(Stepped::Halted),
         }?;
