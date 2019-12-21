@@ -48,6 +48,7 @@ impl From<IOError> for ExecFault {
     }
 }
 
+#[derive(Clone)]
 pub struct Computer {
     pc: Word,
     mem: Vec<Word>,
@@ -70,6 +71,10 @@ pub trait Device {
 impl Device for () {
     fn input(&mut self) -> Result<Word, IOError> { Err(IOError) }
     fn output(&mut self, _val: Word) -> Result<(), IOError> { Err(IOError) }
+}
+
+fn setcc(b: bool) -> Word {
+    if b { 1 } else { 0 }
 }
 
 impl Computer {
@@ -120,6 +125,7 @@ impl Computer {
 
     fn exec(&mut self, io: &mut dyn Device) -> Result<Stepped, ExecFault> {
         let insn = Insn::decode(self.iread(0)?)?;
+        let mut npc = self.pc + insn.opcode.len();
         match insn.opcode {
             Opcode::Add =>
                 self.write_param(&insn, 2,
@@ -133,10 +139,26 @@ impl Computer {
                 self.write_param(&insn, 0, io.input()?),
             Opcode::Out =>
                 Ok(io.output(self.read_param(&insn, 0)?)?),
+            Opcode::Jnz =>
+                Ok(if self.read_param(&insn, 0)? != 0 {
+                    npc = self.read_param(&insn, 1)?;
+                }),
+            Opcode::Jz =>
+                Ok(if self.read_param(&insn, 0)? == 0 {
+                    npc = self.read_param(&insn, 1)?;
+                }),
+            Opcode::CmpLt =>
+                self.write_param(&insn, 2,
+                                 setcc(self.read_param(&insn, 0)? <
+                                       self.read_param(&insn, 1)?)),
+            Opcode::CmpEq =>
+                self.write_param(&insn, 2,
+                                 setcc(self.read_param(&insn, 0)? ==
+                                       self.read_param(&insn, 1)?)),
             Opcode::Halt =>
                 return Ok(Stepped::Halted),
         }?;
-        self.pc += insn.opcode.len();
+        self.pc = npc;
         return Ok(Stepped::Ok);
     }
 

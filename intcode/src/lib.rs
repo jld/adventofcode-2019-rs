@@ -23,18 +23,19 @@ mod test {
     use super::*;
 
     struct TestDev {
+        orig_in: Vec<Word>,
         in_tape: Vec<Word>,
         out_tape: Vec<Word>,
     }
     impl TestDev {
-        fn new(inputs: Vec<Word>) -> Self {
-            let mut in_tape = inputs.to_owned();
+        fn new(orig_in: Vec<Word>) -> Self {
+            let mut in_tape = orig_in.clone();
             in_tape.reverse();
-            Self { in_tape, out_tape: vec![] }
+            Self { orig_in, in_tape, out_tape: vec![] }
         }
         fn expect(&self, outputs: Vec<Word>) {
-            assert_eq!(self.in_tape, vec![]);
-            assert_eq!(self.out_tape, outputs);
+            assert_eq!(self.in_tape, vec![], "input was {:?}", self.orig_in);
+            assert_eq!(self.out_tape, outputs, "input was {:?}", self.orig_in);
         }
     }
     impl Device for TestDev {
@@ -94,4 +95,60 @@ mod test {
         day2_case(vec![1,1,1,4,99,5,6,0,99], vec![30,1,1,4,2,5,6,0,99]);
     }
 
+    fn unary_check(prog: &[Word], inputs: &[Word], model: &dyn Fn(Word) -> Word) {
+        for &i in inputs {
+            let mut dev = TestDev::new(vec![i]);
+            let mut cpu = Computer::new(prog.to_owned());
+            cpu.run(&mut dev).unwrap();
+            dev.expect(vec![model(i)]);
+        }
+    }
+
+    #[test]
+    fn d5p2_eq8_pos() {
+        unary_check(&[3,9,8,9,10,9,4,9,99,-1,8],
+                    &[8, 7, 9, 0, -8], &|i| if i == 8 { 1 } else { 0 });
+    }
+
+    #[test]
+    fn d5p2_lt8_pos() {
+        unary_check(&[3,9,7,9,10,9,4,9,99,-1,8],
+                    &[8, 7, 9, 0, -8], &|i| if i < 8 { 1 } else { 0 });
+    }
+
+    #[test]
+    fn d5p2_eq8_imm() {
+        unary_check(&[3,3,1108,-1,8,3,4,3,99],
+                    &[8, 7, 9, 0, -8], &|i| if i == 8 { 1 } else { 0 });
+    }
+
+    #[test]
+    fn d5p2_lt8_imm() {
+        unary_check(&[3,3,1107,-1,8,3,4,3,99],
+                    &[8, 7, 9, 0, -8], &|i| if i < 8 { 1 } else { 0 });
+    }
+
+    #[test]
+    fn d5p2_jmp_pos() {
+        unary_check(&[3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9],
+                    &[0, 1, -1], &|i| if i == 0 { 0 } else { 1 })
+    }
+ 
+    #[test]
+    fn d5p2_jmp_imm() {
+        unary_check(&[3,3,1105,-1,9,1101,0,0,12,4,12,99,1],
+                    &[0, 1, -1], &|i| if i == 0 { 0 } else { 1 })
+    }
+
+    #[test]
+    fn d5p2_larger() {
+        unary_check(&[3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+                      1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
+                      999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99],
+                    &[8, 7, 9, 0, -8], &|i| {
+                        if i < 8 { 999 }
+                        else if i == 8 { 1000 }
+                        else { 1001 }
+                    });
+    }
 }

@@ -18,6 +18,10 @@ pub enum Opcode {
     Mul,
     In,
     Out,
+    Jnz,
+    Jz,
+    CmpLt,
+    CmpEq,
     Halt,
 }
 
@@ -56,6 +60,10 @@ impl Opcode {
             2 => Ok(Opcode::Mul),
             3 => Ok(Opcode::In),
             4 => Ok(Opcode::Out),
+            5 => Ok(Opcode::Jnz),
+            6 => Ok(Opcode::Jz),
+            7 => Ok(Opcode::CmpLt),
+            8 => Ok(Opcode::CmpEq),
             99 => Ok(Opcode::Halt),
             _ => Err(OpcodeFault::Unknown(w))
         }
@@ -63,7 +71,8 @@ impl Opcode {
 
     pub fn len(self) -> Word {
         match self {
-            Opcode::Add | Opcode::Mul => 4,
+            Opcode::Add | Opcode::Mul | Opcode::CmpLt | Opcode::CmpEq => 4,
+            Opcode::Jnz | Opcode::Jz => 3,
             Opcode::In | Opcode::Out => 2,
             Opcode::Halt => 1,
         }
