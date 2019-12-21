@@ -1,7 +1,11 @@
+mod loop_temple;
+
 use std::io::{stdin, prelude::*};
 use std::iter::FromIterator;
 use std::str::FromStr;
 use std::ops::{Add, Sub, Deref};
+
+use crate::loop_temple::{Facet, Rho};
 
 type Num = i32;
 
@@ -119,13 +123,27 @@ impl FromIterator<String> for Moons {
     }
 }
 
+fn part2(ms: &Moons, verbose: bool) -> u64 {
+    let rx = Rho::compute(&Facet::extract(ms, |v: Vec3| v.0));
+    let ry = Rho::compute(&Facet::extract(ms, |v: Vec3| v.1));
+    let rz = Rho::compute(&Facet::extract(ms, |v: Vec3| v.2));
+    if verbose {
+        println!("X facet: {:?}", rx);
+        println!("Y facet: {:?}", ry);
+        println!("Z facet: {:?}", rz);
+    }
+    (rx * ry * rz).total()
+}
+
 fn main() {
     let stdin = stdin();
-    let mut ms: Moons = stdin.lock().lines().map(|r| r.expect("I/O error reading stdin")).collect();
+    let m0: Moons = stdin.lock().lines().map(|r| r.expect("I/O error reading stdin")).collect();
+    let mut ms = m0.clone();
     for _ in 0..1000 {
         ms.step();
     }
     println!("{}", ms.energy());
+    println!("{}", part2(&m0, true));
 }
 
 
@@ -206,5 +224,11 @@ mod test {
             ms.step();
         }
         assert_eq!(ms.energy(), 1940);
+    }
+
+    #[test]
+    fn part2_examples() {
+        assert_eq!(part2(&example1(), false), 2772);
+        assert_eq!(part2(&example2(), false), 4686774924);
     }
 }
