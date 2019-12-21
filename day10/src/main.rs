@@ -1,7 +1,8 @@
 use std::cmp::{PartialOrd, Ord, Ordering};
-use std::collections::HashSet;
+use std::collections::{HashSet, BTreeMap};
 use std::io::{stdin, prelude::*};
 use std::iter::FromIterator;
+use std::mem;
 
 type Num = i32;
 
@@ -21,10 +22,15 @@ struct Angle {
     sy: Num,
 }
 impl Angle {
+    #[allow(dead_code)]
     fn new(x: Num, y: Num) -> Self {
+        Self::new_plus(x, y).0
+    }
+
+    fn new_plus(x: Num, y: Num) -> (Self, Num) {
         let scale = gcd(x.abs(), y.abs());
         assert_ne!(scale, 0);
-        Self { sx: x/scale, sy: y/scale }
+        (Self { sx: x/scale, sy: y/scale }, scale)
     }
 
     fn is_leftern(self) -> bool {
@@ -60,10 +66,14 @@ impl Point {
     fn new(x: Num, y: Num) -> Self { Self { x, y } }
 
     fn heading(self, other: Point) -> Option<Angle> {
+        self.heading_plus(other).map(|(a,_s)| a)
+    }
+
+    fn heading_plus(self, other: Point) -> Option<(Angle, Num)> {
         if self == other {
             None
         } else {
-            Some(Angle::new(other.x - self.x, other.y - self.y))
+            Some(Angle::new_plus(other.x - self.x, other.y - self.y))
         }
     }
 }
@@ -90,6 +100,40 @@ impl Map {
     }
 }
 
+#[derive(Debug, Clone)]
+struct LaserMap(BTreeMap<Angle, BTreeMap<Num, Point>>);
+
+impl LaserMap {
+    fn new(map: &Map, whence: Point) -> Self {
+        // Yes, the point could be rematerialized from the angle and scale and origin.
+        // But I don't feel like it.
+        let mut radiance: BTreeMap<Angle, BTreeMap<Num, Point>> = BTreeMap::new();
+
+        for &there in &map.0 {
+            if let Some((angle, scale)) = whence.heading_plus(there) {
+                radiance.entry(angle).or_insert_with(BTreeMap::new).insert(scale, there);
+            }
+        }
+
+        LaserMap(radiance)
+    }
+
+    fn firing_order(&self) -> Vec<Point> {
+        let mut targets = vec![];
+        let mut rays: Vec<_> = self.0.values().map(|ray| ray.values()).collect();
+        while !rays.is_empty() {
+            let old_rays = mem::replace(&mut rays, vec![]);
+            for mut ray in old_rays {
+                if let Some(&zap) = ray.next() {
+                    targets.push(zap);
+                    rays.push(ray);
+                }
+            }
+        }
+        targets
+    }
+}
+
 impl FromIterator<String> for Map {
     fn from_iter<I>(iter: I) -> Self
         where I: IntoIterator<Item = String>
@@ -113,6 +157,10 @@ fn main() {
     let map: Map = stdin.lock().lines().map(|r| r.expect("I/O error reading stdin")).collect();
     let best = map.best_spot();
     println!("{}", map.detectable(best));
+    let zaps = LaserMap::new(&map, best).firing_order();
+    if let Some(bet) = zaps.get(199) {
+        println!("{}", bet.x * 100 + bet.y);
+    }
 }
 
 #[cfg(test)]
@@ -270,5 +318,48 @@ mod test {
               "###.##.####.##.#..##"]);
         assert_eq!(map.detectable(Point::new(11, 13)), 210);
         assert_eq!(map.best_spot(), Point::new(11, 13));
+    }
+
+    #[test]
+    fn big_firing_order() {
+        let map = Map::from_strs(
+            &[".#..##.###...#######",
+              "##.############..##.",
+              ".#.######.########.#",
+              ".###.#######.####.#.",
+              "#####.##.#.##.###.##",
+              "..#####..#.#########",
+              "####################",
+              "#.####....###.#.#.##",
+              "##.#################",
+              "#####.##.###..####..",
+              "..######..##.#######",
+              "####.##.####...##..#",
+              ".#####..#.######.###",
+              "##...#.##########...",
+              "#.##########.#######",
+              ".####.#.###.###.#.##",
+              "....##.##.###..#####",
+              ".#.#.###########.###",
+              "#.#.#.#####.####.###",
+              "###.##.####.##.#..##"]);
+        let zaps = LaserMap::new(&map, Point::new(11, 13)).firing_order();
+        const EXPECTED: &[(usize, Num, Num)] =
+            &[(1, 11, 12),
+              (2, 12, 1),
+              (3, 12, 2),
+              (10, 12, 8),
+              (20, 16, 0),
+              (50, 16, 9),
+              (100, 10, 16),
+              (199, 9, 6),
+              (200, 8, 2),
+              (201, 10, 9),
+              (299, 11, 1)];
+        assert_eq!(zaps.len(), 299);
+        for &(nth, x, y) in EXPECTED {
+            assert_eq!(zaps[nth - 1], Point::new(x, y),
+                       "bad value for zap #{}", nth);
+        }
     }
 }
