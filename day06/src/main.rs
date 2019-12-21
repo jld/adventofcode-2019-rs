@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::{stdin, prelude::*};
 
 struct OrbDb(HashMap<String, Vec<String>>);
 
@@ -33,7 +34,12 @@ impl OrbDb {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut db = OrbDb::new();
+    let stdin = stdin();
+    for line in stdin.lock().lines().map(|r| r.expect("I/O error reading stdin")) {
+        db.add_line(&line);
+    }
+    println!("{}", db.count_stuff());
 }
 
 #[cfg(test)]
