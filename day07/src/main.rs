@@ -3,6 +3,7 @@ mod par;
 use std::io::{stdin, prelude::*};
 
 use intcode::{Computer, Device, IOError, Word};
+use crate::par::par_amp;
 
 fn permutations(n: Word) -> Vec<Vec<Word>> {
     if n == 0 {
@@ -60,16 +61,20 @@ fn amplify(cpu: &Computer, phases: &[Word]) -> Word {
     phases.iter().fold(0, |last_out, &phase| amplify_one(cpu, phase, last_out))
 }
 
+fn find_best(cpu: &Computer, amp: &dyn Fn(&Computer, &[Word]) -> Word) -> Word {
+    permutations(5)
+        .into_iter()
+        .map(|p| amp(&cpu, &p))
+        .max()
+        .unwrap()
+}
+
 fn main() {
     let stdin = stdin();
     let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
     let cpu = Computer::from_str(&prog).expect("parse error");
-    let best = permutations(5)
-        .into_iter()
-        .map(|p| amplify(&cpu, &p))
-        .max()
-        .unwrap();
-    println!("{}", best);
+    println!("{}", find_best(&cpu, &amplify));
+    println!("{}", find_best(&cpu, &par_amp));
 }
 
 #[cfg(test)]

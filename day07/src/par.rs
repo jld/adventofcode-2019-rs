@@ -27,7 +27,7 @@ impl Device for ParDev {
     }
 }
 
-fn par_amp(cpu: &Computer, phases: &[Word]) -> Word {
+pub fn par_amp(cpu: &Computer, phases: &[Word]) -> Word {
     let mut sends = vec![];
     let mut recvs = vec![];
 
