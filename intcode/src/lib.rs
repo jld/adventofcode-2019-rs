@@ -6,7 +6,7 @@ pub mod exec;
 
 pub use exec::{Computer, Device, ExecError, IOError, Stepped};
 
-pub type Word = i32;
+pub type Word = i64;
 
 pub type ParseError = ParseIntError;
 

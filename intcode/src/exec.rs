@@ -28,6 +28,7 @@ pub enum ExecFault {
     Mem(MemFault),
     WriteImmediate,
     IO(IOError),
+    Overflow(Opcode, Word, Word),
 }
 
 impl From<DecodeFault> for ExecFault {
@@ -75,6 +76,14 @@ impl Device for () {
 
 fn setcc(b: bool) -> Word {
     if b { 1 } else { 0 }
+}
+
+fn alu_add(x: Word, y: Word) -> Result<Word, ExecFault> {
+    x.checked_add(y).ok_or(ExecFault::Overflow(Opcode::Add, x, y))
+}
+
+fn alu_mul(x: Word, y: Word) -> Result<Word, ExecFault> {
+    x.checked_mul(y).ok_or(ExecFault::Overflow(Opcode::Mul, x, y))
 }
 
 impl Computer {
@@ -129,12 +138,12 @@ impl Computer {
         match insn.opcode {
             Opcode::Add =>
                 self.write_param(&insn, 2,
-                                 self.read_param(&insn, 0)? +
-                                 self.read_param(&insn, 1)?),
+                                 alu_add(self.read_param(&insn, 0)?,
+                                         self.read_param(&insn, 1)?)?),
             Opcode::Mul => 
                 self.write_param(&insn, 2,
-                                 self.read_param(&insn, 0)? *
-                                 self.read_param(&insn, 1)?),
+                                 alu_mul(self.read_param(&insn, 0)?,
+                                         self.read_param(&insn, 1)?)?),
             Opcode::In =>
                 self.write_param(&insn, 0, io.input()?),
             Opcode::Out =>
