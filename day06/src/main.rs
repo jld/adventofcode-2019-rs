@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 use std::io::{stdin, prelude::*};
 
-struct OrbDb(HashMap<String, Vec<String>>);
+struct OrbDb(HashMap<String, String>);
 
 impl OrbDb {
     fn new() -> Self { OrbDb(HashMap::new()) }
 
     fn add(&mut self, sup: &str, inf: &str) {
-        let ent = self.0.entry(sup.to_owned());
-        ent.or_insert_with(|| vec![]).push(inf.to_owned());
+        let old_sup = self.0.insert(inf.to_owned(), sup.to_owned());
+        assert!(old_sup.is_none());
     }
 
     fn add_line(&mut self, line: &str) {
@@ -18,18 +18,40 @@ impl OrbDb {
         self.add(sup, inf);
     }
 
-    fn xcount_infs(&self, depth: u64, whence: &str) -> u64 {
-        let mut acc = depth;
-        if let Some(infs) = self.0.get(whence) {
-            for inf in infs {
-                acc += self.xcount_infs(depth + 1, inf);
-            }
-        }
-        return acc;
+    fn sup(&self, whence: &str) -> Option<&str> {
+        self.0.get(whence).map(|s| s as &str)
     }
 
-    fn count_stuff(&self) -> u64 {
-        self.xcount_infs(0, "COM")
+    fn sups<'a>(&'a self, whence: &'a str) -> SupStream<'a> {
+        SupStream { db: self, whence: Some(whence) }
+    }
+
+    fn num_sups(&self, whence: &str) -> usize {
+        self.sups(whence).map(|_| 1_usize).sum()
+    }
+
+    fn num_proper_sups(&self, whence: &str) -> usize {
+        self.num_sups(whence) - 1
+    } 
+
+    fn count_stuff(&self) -> usize {
+        self.0.keys().map(|k| self.num_proper_sups(k)).sum()
+    }
+}
+
+struct SupStream<'a> {
+    db: &'a OrbDb,
+    whence: Option<&'a str>,
+}
+
+impl<'a> Iterator for SupStream<'a> {
+    type Item = &'a str;
+    fn next(&mut self) -> Option<&'a str> {
+        let rv = self.whence;
+        if let Some(thence) = rv {
+            self.whence = self.db.sup(thence);
+        }
+        rv
     }
 }
 
