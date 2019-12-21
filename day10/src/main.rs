@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::io::{stdin, prelude::*};
 use std::iter::FromIterator;
 
 type Num = i32;
@@ -59,6 +60,7 @@ impl Map {
               .unwrap()
     }
 
+    #[cfg(test)]
     fn from_strs(strs: &[&str]) -> Self {
         strs.iter().cloned().map(|s| s.to_owned()).collect()
     }
@@ -83,7 +85,10 @@ impl FromIterator<String> for Map {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let map: Map = stdin.lock().lines().map(|r| r.expect("I/O error reading stdin")).collect();
+    let best = map.best_spot();
+    println!("{}", map.detectable(best));
 }
 
 #[cfg(test)]
