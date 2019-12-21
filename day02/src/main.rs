@@ -1,13 +1,11 @@
 use std::env::args;
 use std::io::{stdin, prelude::*};
-use std::iter::IntoIterator;
-use std::str::FromStr;
 use std::process::exit;
 
 use intcode::{Computer, Word};
 
 fn compute(mem: Vec<Word>, noun: Word, verb: Word) -> Word {
-    let mut cpu = Computer::new(mem.into_iter().collect());
+    let mut cpu = Computer::new(mem);
     cpu.write(1, noun).unwrap();
     cpu.write(2, verb).unwrap();
     cpu.run(&mut ()).unwrap();
@@ -34,14 +32,8 @@ fn part2(mem: Vec<Word>) {
 
 fn main() {
     let stdin = stdin();
-    let mem: Vec<Word> =
-        stdin.lock()
-             .split(b',')
-             .map(|r| r.expect("I/O error reading stdin"))
-             .map(|b| String::from_utf8(b).expect("encoding error on stdin"))
-             .map(|s| Word::from_str(s.trim())
-                  .unwrap_or_else(|e| panic!("bad number {:?}: {}", s, e)))
-             .collect();
+    let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
+    let mem = intcode::parse(&prog).expect("program parse error");
     match args().nth(1).as_ref().map(|s| s as &str) { // sigh
         Some("1") => part1(mem),
         Some("2") => part2(mem),

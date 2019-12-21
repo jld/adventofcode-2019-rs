@@ -1,9 +1,22 @@
+use std::num::ParseIntError;
+use std::str::FromStr;
+
 pub mod decode;
 pub mod exec;
 
 pub use exec::{Computer, Device, ExecError, IOError, Stepped};
 
 pub type Word = i32;
+
+pub type ParseError = ParseIntError;
+
+pub fn parse(s: &str) -> Result<Vec<Word>, ParseError> {
+    let mut acc = vec![];
+    for num_or_err in s.split(",").map(|s| Word::from_str(s.trim())) {
+        acc.push(num_or_err?);
+    }
+    Ok(acc)
+}
 
 #[cfg(test)]
 mod test {

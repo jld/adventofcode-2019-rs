@@ -1,6 +1,6 @@
 use std::convert::From;
 
-use crate::{Word, decode::{Insn, Mode, Opcode, DecodeFault}};
+use crate::{Word, ParseError, decode::{Insn, Mode, Opcode, DecodeFault}};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemMode {
@@ -76,6 +76,10 @@ impl Computer {
     pub fn new(mem: Vec<Word>) -> Self {
         assert!(mem.len() - 1 <= Word::max_value() as usize);
         Self { pc: 0, mem }
+    }
+
+    pub fn from_str(s: &str) -> Result<Self, ParseError> {
+        Ok(Self::new(crate::parse(s)?))
     }
 
     fn xread(&self, addr: Word, mode: MemMode) -> Result<Word, MemFault> {
