@@ -1,3 +1,5 @@
+mod par;
+
 use std::io::{stdin, prelude::*};
 
 use intcode::{Computer, Device, IOError, Word};
