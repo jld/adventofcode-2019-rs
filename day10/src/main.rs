@@ -1,3 +1,4 @@
+use std::cmp::{PartialOrd, Ord, Ordering};
 use std::collections::HashSet;
 use std::io::{stdin, prelude::*};
 use std::iter::FromIterator;
@@ -24,6 +25,29 @@ impl Angle {
         let scale = gcd(x.abs(), y.abs());
         assert_ne!(scale, 0);
         Self { sx: x/scale, sy: y/scale }
+    }
+
+    fn is_leftern(self) -> bool {
+        self.sx < 0 || self.sx == 0 && self.sy > 0
+    }
+}
+
+impl Ord for Angle {
+    // The basic idea here is to exactly compare two ratios (y/x) by
+    // cross-multiplying.  But that's not quite it, because that's
+    // comparing slopes of lines and would equate opposite headings,
+    // so it's necessary to split the space in half.  Conveniently,
+    // the slope ordering puts up/down before up-right/down-left.
+    fn cmp(&self, other: &Angle) -> Ordering {
+        let skey = (self.is_leftern(), self.sy * other.sx);
+        let okey = (other.is_leftern(), other.sy * self.sx);
+        skey.cmp(&okey)
+    }
+}
+
+impl PartialOrd for Angle {
+    fn partial_cmp(&self, other: &Angle) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -133,6 +157,25 @@ mod test {
         assert_eq!(here.heading(here), None);
         assert_eq!(here.heading(Point::new(1, 0)), here.heading(Point::new(2, 2)));
         assert_ne!(Point::new(2, 2).heading(here), here.heading(Point::new(2, 2)));
+    }
+
+    #[test]
+    fn test_rotation() {
+        const POINTS: [(Num, Num); 16] =
+            [(0, -2), (1, -2), (2, -2), (2, -1),
+             (2, 0), (2, 1), (2, 2), (1, 2),
+             (0, 2), (-1, 2), (-2, 2), (-2, 1),
+             (-2, 0), (-2, -1), (-2, -2), (-1, -2)];
+        for i in 0..16 {
+            let l = Angle::new(POINTS[i].0, POINTS[i].1);
+            assert!(!(l < l), "{:?} < {:?}", POINTS[i], POINTS[i]);
+            assert!(!(l > l), "{:?} > {:?}", POINTS[i], POINTS[i]);
+            for j in (i+1)..16 {
+                let r = Angle::new(POINTS[j].0, POINTS[j].1);
+                assert!(l < r, "{:?} !< {:?}", POINTS[i], POINTS[j]);
+                assert!(r > l, "{:?} !> {:?}", POINTS[j], POINTS[i]);
+            }
+        }
     }
 
     #[test]
