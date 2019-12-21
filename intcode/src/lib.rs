@@ -1,4 +1,7 @@
-mod decode;
+pub mod decode;
+pub mod exec;
+
+pub use exec::{Computer, Device, ExecError, IOError, Stepped};
 
 pub type Word = i32;
 

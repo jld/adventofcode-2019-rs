@@ -60,6 +60,14 @@ impl Opcode {
             _ => Err(OpcodeFault::Unknown(w))
         }
     }
+
+    pub fn len(self) -> Word {
+        match self {
+            Opcode::Add | Opcode::Mul => 4,
+            Opcode::In | Opcode::Out => 2,
+            Opcode::Halt => 1,
+        }
+    }
 }
 
 impl Insn {
