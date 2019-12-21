@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+use std::iter::FromIterator;
+
 type Num = i32;
 
 // FIXME may not work on negative numbers (but I probably don't need to care).
@@ -37,6 +40,45 @@ impl Point {
         } else {
             Some(Angle::new(other.x - self.x, other.y - self.y))
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Map(HashSet<Point>);
+
+impl Map {
+    fn detectable(&self, whence: Point) -> usize {
+        let hs: HashSet<Angle> = self.0.iter().filter_map(|&ast| whence.heading(ast)).collect();
+        hs.len()
+    }
+
+    fn best_spot(&self) -> Point {
+        self.0.iter()
+              .cloned()
+              .max_by_key(|&ast| self.detectable(ast))
+              .unwrap()
+    }
+
+    fn from_strs(strs: &[&str]) -> Self {
+        strs.iter().cloned().map(|s| s.to_owned()).collect()
+    }
+}
+
+impl FromIterator<String> for Map {
+    fn from_iter<I>(iter: I) -> Self
+        where I: IntoIterator<Item = String>
+    {
+        let mut this = Map(HashSet::new());
+        for (y, line) in iter.into_iter().enumerate() {
+            for (x, ch) in line.chars().enumerate() {
+                match ch {
+                    '#' => assert!(this.0.insert(Point::new(x as Num, y as Num))),
+                    '.' => (),
+                    _ => panic!("bad map char {:?}", ch)
+                }
+            }
+        }
+        this
     }
 }
 
@@ -86,5 +128,21 @@ mod test {
         assert_eq!(here.heading(here), None);
         assert_eq!(here.heading(Point::new(1, 0)), here.heading(Point::new(2, 2)));
         assert_ne!(Point::new(2, 2).heading(here), here.heading(Point::new(2, 2)));
+    }
+
+    #[test]
+    fn example1() {
+        let map = Map::from_strs(
+            &[".#..#",
+              ".....",
+              "#####",
+              "....#",
+              "...##"]);
+
+        assert_eq!(map.detectable(Point::new(3, 4)), 8);
+        assert_eq!(map.best_spot(), Point::new(3, 4));
+        assert_eq!(map.detectable(Point::new(0, 2)), 6);
+        assert_eq!(map.detectable(Point::new(4, 2)), 5);
+        assert_eq!(map.detectable(Point::new(4, 4)), 7);
     }
 }
