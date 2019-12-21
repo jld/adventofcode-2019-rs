@@ -55,4 +55,30 @@ mod test {
         assert_eq!(cpu.read(4).unwrap(), 99);
     }
 
+    fn day2_case(before: Vec<Word>, after: Vec<Word>) {
+        let mut cpu = Computer::new(before);
+        cpu.run(&mut ()).unwrap();
+        assert_eq!(cpu.into_mem(), after);
+    }
+
+    #[test]
+    fn day2_line1() {
+        day2_case(vec![1,0,0,0,99], vec![2,0,0,0,99]);
+    }
+
+    #[test]
+    fn day2_line2() {
+        day2_case(vec![2,3,0,3,99], vec![2,3,0,6,99]);
+    }
+
+    #[test]
+    fn day2_line3() {
+        day2_case(vec![2,4,4,5,99,0], vec![2,4,4,5,99,9801]);
+    }
+
+    #[test]
+    fn day2_line4() {
+        day2_case(vec![1,1,1,4,99,5,6,0,99], vec![30,1,1,4,2,5,6,0,99]);
+    }
+
 }

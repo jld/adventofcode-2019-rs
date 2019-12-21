@@ -150,6 +150,9 @@ impl Computer {
         }
     }
 
+    pub fn into_mem(self) -> Vec<Word> {
+        self.mem
+    }
 }
 
 // TODO, maybe: tests for the error cases
