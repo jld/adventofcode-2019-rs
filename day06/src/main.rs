@@ -30,12 +30,8 @@ impl OrbDb {
         self.sups(whence).map(|_| 1_usize).sum()
     }
 
-    fn num_proper_sups(&self, whence: &str) -> usize {
-        self.num_sups(whence) - 1
-    } 
-
     fn count_stuff(&self) -> usize {
-        self.0.keys().map(|k| self.num_proper_sups(k)).sum()
+        self.0.keys().map(|k| self.num_sups(k)).sum()
     }
 }
 
@@ -47,11 +43,8 @@ struct SupStream<'a> {
 impl<'a> Iterator for SupStream<'a> {
     type Item = &'a str;
     fn next(&mut self) -> Option<&'a str> {
-        let rv = self.whence;
-        if let Some(thence) = rv {
-            self.whence = self.db.sup(thence);
-        }
-        rv
+        self.whence = self.whence.and_then(|thence| self.db.sup(thence));
+        self.whence
     }
 }
 
