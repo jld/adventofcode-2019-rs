@@ -84,8 +84,8 @@ impl Computer {
                 .map(|ptr| *ptr)
     }
 
-    fn iread(&self, addr: Word) -> Result<Word, MemFault> {
-        self.xread(addr, MemMode::IRead)
+    fn iread(&self, pcrel: Word) -> Result<Word, MemFault> {
+        self.xread(self.pc + pcrel, MemMode::IRead)
     }
 
     pub fn read(&self, addr: Word) -> Result<Word, MemFault> {
@@ -99,7 +99,7 @@ impl Computer {
     }
 
     fn read_param(&self, insn: &Insn, idx: usize) -> Result<Word, ExecFault> {
-        let field = self.iread(self.pc + 1 + (idx as Word))?;
+        let field = self.iread(1 + idx as Word)?;
         match insn.modes[idx] {
             Mode::Immediate => Ok(field),
             Mode::Position => Ok(self.read(field)?),
@@ -107,7 +107,7 @@ impl Computer {
     }
 
     fn write_param(&mut self, insn: &Insn, idx: usize, val: Word) -> Result<(), ExecFault> {
-        let field = self.iread(self.pc + (idx as Word))?;
+        let field = self.iread(1 + idx as Word)?;
         match insn.modes[idx] {
             Mode::Immediate => Err(ExecFault::WriteImmediate),
             Mode::Position => Ok(self.write(field, val)?),
@@ -115,7 +115,7 @@ impl Computer {
     }
 
     fn exec(&mut self, io: &mut dyn Device) -> Result<Stepped, ExecFault> {
-        let insn = Insn::decode(self.iread(self.pc)?)?;
+        let insn = Insn::decode(self.iread(0)?)?;
         match insn.opcode {
             Opcode::Add =>
                 self.write_param(&insn, 2,
@@ -151,3 +151,5 @@ impl Computer {
     }
 
 }
+
+// TODO, maybe: tests for the error cases
