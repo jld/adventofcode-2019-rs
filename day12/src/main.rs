@@ -1,3 +1,4 @@
+use std::io::{stdin, prelude::*};
 use std::iter::FromIterator;
 use std::str::FromStr;
 use std::ops::{Add, Sub, Deref};
@@ -119,7 +120,12 @@ impl FromIterator<String> for Moons {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let mut ms: Moons = stdin.lock().lines().map(|r| r.expect("I/O error reading stdin")).collect();
+    for _ in 0..1000 {
+        ms.step();
+    }
+    println!("{}", ms.energy());
 }
 
 
