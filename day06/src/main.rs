@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 use std::io::{stdin, prelude::*};
 
 struct OrbDb(HashMap<String, String>);
@@ -33,6 +33,12 @@ impl OrbDb {
     fn count_stuff(&self) -> usize {
         self.0.keys().map(|k| self.num_sups(k)).sum()
     }
+
+    fn xfers(&self, a: &str, b: &str) -> usize {
+        let ah: HashSet<_> = self.sups(a).collect();
+        let bh: HashSet<_> = self.sups(b).collect();
+        ah.symmetric_difference(&bh).map(|_| 1_usize).sum()
+    }
 }
 
 struct SupStream<'a> {
@@ -48,6 +54,7 @@ impl<'a> Iterator for SupStream<'a> {
     }
 }
 
+
 fn main() {
     let mut db = OrbDb::new();
     let stdin = stdin();
@@ -55,14 +62,14 @@ fn main() {
         db.add_line(&line);
     }
     println!("{}", db.count_stuff());
+    println!("{}", db.xfers("YOU", "SAN"));
 }
 
 #[cfg(test)]
 mod test {
     use super::OrbDb;
 
-    #[test]
-    fn example() {
+    fn example_orbs() -> OrbDb {
         let mut db = OrbDb::new();
         for &line in &["COM)B",
                        "B)C",
@@ -77,6 +84,27 @@ mod test {
                        "K)L"] {
             db.add_line(line);
         }
-        assert_eq!(db.count_stuff(), 42);
+        return db;
+    }
+
+    #[test]
+    fn example_count() {
+        assert_eq!(example_orbs().count_stuff(), 42);
+    }
+
+    #[test]
+    fn example_xfer() {
+        let mut db = example_orbs();
+        db.add_line("K)YOU");
+        db.add_line("I)SAN");
+        assert_eq!(db.xfers("YOU", "SAN"), 4);
+    }
+
+    #[test]
+    fn example_xfer0() {
+        let mut db = example_orbs();
+        db.add_line("I)YOU");
+        db.add_line("I)SAN");
+        assert_eq!(db.xfers("YOU", "SAN"), 0);
     }
 }
