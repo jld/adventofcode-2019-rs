@@ -262,7 +262,7 @@ mod test {
 
     #[quickcheck]
     fn qc_walk_len(p: Point, d: Dir, l: Len) -> bool {
-        let obs_len: Len = p.walk(d, l).map(|_| 1 as Len).sum();
+        let obs_len = p.walk(d, l).count() as Len;
         obs_len == l
     }
 
@@ -294,8 +294,8 @@ mod test {
         if dls.len() == 0 {
             return true;
         }
-        let obs_len: Len = p.walk_many(dls.iter().cloned()).map(|_| 1 as Len).sum();
-        let exp_len: Len = dls.iter().map(|&(_d, l)| l).sum();
+        let obs_len = p.walk_many(dls.iter().cloned()).count() as Len;
+        let exp_len = dls.iter().map(|&(_d, l)| l).sum();
         obs_len == exp_len
     }
 

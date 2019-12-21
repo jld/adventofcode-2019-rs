@@ -30,8 +30,8 @@ fn main() {
     let mut nums = args().skip(1).map(|s| u32::from_str(&s).unwrap());
     let lb = nums.next().expect("no lower bound");
     let ub = nums.next().expect("no upper bound");
-    let n1: u32 = (lb..=ub).filter(|&n| pwd_check1(n)).map(|_| 1u32).sum();
-    let n2: u32 = (lb..=ub).filter(|&n| pwd_check2(n)).map(|_| 1u32).sum();
+    let n1 = (lb..=ub).filter(|&n| pwd_check1(n)).count();
+    let n2 = (lb..=ub).filter(|&n| pwd_check2(n)).count();
     println!("{} {}", n1, n2);
 }
 

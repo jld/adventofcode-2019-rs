@@ -27,7 +27,7 @@ impl OrbDb {
     }
 
     fn num_sups(&self, whence: &str) -> usize {
-        self.sups(whence).map(|_| 1_usize).sum()
+        self.sups(whence).count()
     }
 
     fn count_stuff(&self) -> usize {
@@ -37,7 +37,7 @@ impl OrbDb {
     fn xfers(&self, a: &str, b: &str) -> usize {
         let ah: HashSet<_> = self.sups(a).collect();
         let bh: HashSet<_> = self.sups(b).collect();
-        ah.symmetric_difference(&bh).map(|_| 1_usize).sum()
+        ah.symmetric_difference(&bh).count()
     }
 }
 
