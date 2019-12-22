@@ -64,3 +64,47 @@ impl Device for PaintDev {
 fn main() {
     println!("Hello, world!");
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use intcode::{Device, Word};
+    use painting::{Point, Dir};
+
+    fn supply(dev: &mut impl Device, outs:&[Word]) {
+        for &val in outs {
+            dev.output(val).unwrap()
+        }
+    }
+
+    #[test]
+    fn the_example() {
+        let mut dev = PaintDev::new();
+        assert_eq!(dev.input(), Ok(0));
+
+        supply(&mut dev, &[1,0]);
+        assert_eq!(dev.input(), Ok(0));
+        assert_eq!(dev.canvas.len(), 1);
+        assert!(dev.canvas.contains(Point::origin()));
+        assert_eq!(dev.mask.len(), 1);
+        assert!(dev.mask.contains(Point::origin()));
+        assert_eq!(dev.turtle, Point{ x: -1, y: 0 });
+        assert_eq!(dev.heading, Dir::Lf.to_move());
+
+        supply(&mut dev, &[0,0]);
+        assert_eq!(dev.canvas.len(), 1);
+        assert_eq!(dev.mask.len(), 2);
+        assert_eq!(dev.turtle, Point{ x: -1, y: -1 });
+
+        supply(&mut dev, &[1,0, 1,0]);
+        assert_eq!(dev.input(), Ok(1));
+        assert_eq!(dev.canvas.len(), 3);
+        assert_eq!(dev.mask.len(), 4);
+        assert_eq!(dev.turtle, Point::origin());
+        assert_eq!(dev.heading, Dir::Up.to_move());
+
+        supply(&mut dev, &[0,1, 1,0, 1,0]);
+        assert_eq!(dev.canvas.len(), 4);
+        assert_eq!(dev.mask.len(), 6);
+    }
+}
