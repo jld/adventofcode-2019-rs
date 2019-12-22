@@ -47,6 +47,17 @@ impl PointSet {
     pub fn len(&self) -> usize {
         self.inner.values().map(|&tile| tile.count_ones() as usize).sum()
     }
+
+    pub fn bounding_box(&self) -> (Point, Point) {
+        if self.inner.is_empty() {
+            return (Point::origin(), Point::origin());
+        }
+        let xl = self.inner.keys().map(|p| p.x * 8).min().unwrap();
+        let yl = self.inner.keys().map(|p| p.y * 8).min().unwrap();
+        let xh = self.inner.keys().map(|p| p.x * 8 + 7).max().unwrap();
+        let yh = self.inner.keys().map(|p| p.y * 8 + 7).max().unwrap();
+        (Point { x: xl, y: yl }, Point { x: xh, y: yh })
+    }
 }
 
 #[cfg(test)]
@@ -170,5 +181,23 @@ mod test {
         ps.insert(p);
         ps.insert(q);
         ps.len() == 2 || p == q
+    }
+
+    #[quickcheck]
+    fn qc_bbox_1(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        let (low, high) = ps.bounding_box();
+        low.x <= p.x && low.y <= p.y && high.x >= p.x && high.y >= p.y
+    }
+
+    #[quickcheck]
+    fn qc_bbox_many(pv: Vec<Point>) -> bool {
+        let mut ps = PointSet::new();
+        for &p in &pv {
+            ps.insert(p);
+        }
+        let (low, high) = ps.bounding_box();
+        pv.iter().all(|p| low.x <= p.x && low.y <= p.y && high.x >= p.x && high.y >= p.y)
     }
 }
