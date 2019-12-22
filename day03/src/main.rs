@@ -1,12 +1,8 @@
-mod geom;
-mod point_set;
-
 use std::collections::HashMap;
 use std::io::{stdin, prelude::*};
 use std::str::FromStr;
 
-use crate::geom::{Point,Dir,Len};
-use crate::point_set::PointSet;
+use painting::{Point,Dir,Len,PointSet};
 
 fn parse_one(token: &str) -> (Dir, Len) {
     let c0 = token.chars().next().expect("empty move");
@@ -68,7 +64,7 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::{part1, part2, parse, all_crossings};
-    use crate::geom::Point;
+    use painting::Point;
 
     #[test]
     fn spec1_diagrams() {
