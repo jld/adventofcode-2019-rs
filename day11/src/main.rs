@@ -32,6 +32,21 @@ impl PaintDev {
     fn mask_size(&self) -> usize {
         self.mask.len()
     }
+
+    fn blanch(&mut self) {
+        self.canvas.insert(Point::origin());
+    }
+
+    fn print(&self) {
+        let (low, high) = self.canvas.bounding_box();
+        for y in (low.y..=high.y).rev() {
+            let mut line = String::new();
+            for x in low.x..high.x {
+                line.push(if self.canvas.contains(Point { x, y }) { '#' } else { '.' })
+            }
+            println!("{}", line);
+        }
+    }
 }
 
 impl Device for PaintDev {
@@ -63,14 +78,21 @@ impl Device for PaintDev {
     }
 }
 
+
 fn main() {
     let stdin = stdin();
     let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
-    let mut cpu = Computer::from_str(&prog).expect("parse error");
+    let mut cpu0 = Computer::from_str(&prog).expect("parse error");
+    let mut cpu1 = cpu0.clone();
 
     let mut dev = PaintDev::new();
-    cpu.run(&mut dev).expect("runtime error");
+    cpu0.run(&mut dev).expect("runtime error");
     println!("{}", dev.mask_size());
+
+    dev = PaintDev::new();
+    dev.blanch();
+    cpu1.run(&mut dev).expect("runtime error");
+    dev.print();
 }
 
 #[cfg(test)]
