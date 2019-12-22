@@ -1,3 +1,5 @@
+use std::io::{stdin, prelude::*};
+
 use intcode::{Computer, Device, IOError, Word};
 use painting::{PointSet, Point, Move, Dir};
 
@@ -62,7 +64,13 @@ impl Device for PaintDev {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
+    let mut cpu = Computer::from_str(&prog).expect("parse error");
+
+    let mut dev = PaintDev::new();
+    cpu.run(&mut dev).expect("runtime error");
+    println!("{}", dev.mask_size());
 }
 
 #[cfg(test)]
