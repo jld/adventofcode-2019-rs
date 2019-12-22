@@ -30,19 +30,22 @@ impl PointSet {
 
     pub fn insert(&mut self, p: Point) -> bool {
         let (key, mask) = split(p);
-        let grid_ptr = self.inner.entry(key).or_insert(0);
-        let old = *grid_ptr & mask != 0;
-        *grid_ptr |= mask;
+        let tile_ptr = self.inner.entry(key).or_insert(0);
+        let old = *tile_ptr & mask != 0;
+        *tile_ptr |= mask;
         return !old;
     }
 
-    #[allow(dead_code)]
     pub fn remove(&mut self, p: Point) -> bool {
         let (key, mask) = split(p);
-        let grid_ptr = self.inner.entry(key).or_insert(0);
-        let old = *grid_ptr & mask != 0;
-        *grid_ptr &= !mask;
+        let tile_ptr = self.inner.entry(key).or_insert(0);
+        let old = *tile_ptr & mask != 0;
+        *tile_ptr &= !mask;
         return old;
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.values().map(|&tile| tile.count_ones() as usize).sum()
     }
 }
 
@@ -131,5 +134,41 @@ mod test {
         ps.insert(p);
         ps.insert(q);
         ps.contains(p) && ps.contains(q)
+    }
+
+    #[test]
+    fn empty_len() {
+        assert_eq!(PointSet::new().len(), 0);
+    }
+
+    #[quickcheck]
+    fn qc_singleton_len(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.len() == 1
+    }
+
+    #[quickcheck]
+    fn qc_double_insert_len(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.insert(p);
+        ps.len() == 1
+    }
+
+    #[quickcheck]
+    fn qc_singleton_emptied_len(p: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.remove(p);
+        ps.len() == 0
+    }
+
+    #[quickcheck]
+    fn qc_double_len(p: Point, q: Point) -> bool {
+        let mut ps = PointSet::new();
+        ps.insert(p);
+        ps.insert(q);
+        ps.len() == 2 || p == q
     }
 }
