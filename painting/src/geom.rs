@@ -82,6 +82,14 @@ impl Move {
     pub fn len(self) -> Len {
         (self.dx.abs() as Len) + (self.dy.abs() as Len)
     }
+
+    pub fn turn_left(self) -> Move {
+        Move { dx: -self.dy, dy: self.dx }
+    }
+
+    pub fn turn_right(self) -> Move {
+        Move { dx: self.dy, dy: -self.dx }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -314,5 +322,13 @@ mod test {
         let fwd: Vec<_> = iter::once(p).chain(p.walk_many(dls)).collect();
         let rev: Vec<_> = iter::once(q).chain(q.walk_many(els)).collect();
         vec_rev(rev) == fwd
+    }
+
+    #[test]
+    fn turnings() {
+        assert_eq!(Dir::Up.to_move().turn_left(), Dir::Lf.to_move());
+        assert_eq!(Dir::Lf.to_move().turn_left(), Dir::Dn.to_move());
+        assert_eq!(Dir::Up.to_move().turn_right(), Dir::Rt.to_move());
+        assert_eq!(Dir::Rt.to_move().turn_right(), Dir::Dn.to_move());
     }
 }
