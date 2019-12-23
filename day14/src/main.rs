@@ -63,6 +63,12 @@ impl Book {
             panic!("duplicate recipe for {}", &wtf.output.substance);
         }
     }
+
+    fn ore_for_fuel(&self, fuel: Amount) -> Amount {
+        let mut bench = Bench::new();
+        bench.get_fuel(self, fuel);
+        bench.ore_used
+    }
 }
 
 impl<'s> FromIterator<&'s str> for Book {
@@ -122,8 +128,8 @@ impl Bench {
         }
     }
 
-    fn get_fuel(&mut self, book: &Book) {
-        self.obtain(book, Thing { quantity: 1, substance: "FUEL".to_owned() })
+    fn get_fuel(&mut self, book: &Book, amt: Amount) {
+        self.obtain(book, Thing { quantity: amt, substance: "FUEL".to_owned() })
     }
 }
 
@@ -135,9 +141,7 @@ fn main() {
              .map(|r| r.expect("I/O error reading stdin"))
              .collect();
 
-    let mut bench = Bench::new();
-    bench.get_fuel(&book);
-    println!("{}", bench.ore_used);
+    println!("{}", book.ore_for_fuel(1));
 }
 
 #[cfg(test)]
@@ -172,7 +176,7 @@ mod test {
               (&[(7, "A"), (1, "D")], (1, "E")),
               (&[(7, "A"), (1, "E")], (1, "FUEL"))]);
         let mut bench = Bench::new();
-        bench.get_fuel(&book);
+        bench.get_fuel(&book, 1);
         assert_eq!(bench.ore_used, 31);
 
         let leftovers: Vec<(String, Amount)> =
@@ -191,9 +195,7 @@ mod test {
               (&[(4, "C"), (1, "A")], (1, "CA")),
               (&[(2, "AB"), (3, "BC"), (4, "CA")], (1, "FUEL"))]);
         
-        let mut bench = Bench::new();
-        bench.get_fuel(&book);
-        assert_eq!(bench.ore_used, 165);
+        assert_eq!(book.ore_for_fuel(1), 165);
     }
 
     #[test]
@@ -205,9 +207,7 @@ mod test {
               (&[(1, "B"), (1, "A")], (1, "BA")),
               (&[(1, "AB"), (1, "BA")], (1, "FUEL"))]);
         
-        let mut bench = Bench::new();
-        bench.get_fuel(&book);
-        assert_eq!(bench.ore_used, 4);
+        assert_eq!(book.ore_for_fuel(1), 4);
     }
 
     #[test]
@@ -219,9 +219,7 @@ mod test {
               (&[(1, "B"), (1, "A")], (1, "BA")),
               (&[(1, "AB"), (1, "BA")], (1, "FUEL"))]);
  
-        let mut bench = Bench::new();
-        bench.get_fuel(&book);
-        assert_eq!(bench.ore_used, 6);
+        assert_eq!(book.ore_for_fuel(1), 6);
     }
 
     #[test]
@@ -234,10 +232,8 @@ mod test {
               "5 B, 7 C => 1 BC",
               "4 C, 1 A => 1 CA",
               "2 AB, 3 BC, 4 CA => 1 FUEL"];
-        let book = TEXT.iter().cloned().collect();
-        let mut bench = Bench::new();
-        bench.get_fuel(&book);
-        assert_eq!(bench.ore_used, 165);
+        let book: Book = TEXT.iter().cloned().collect();
+        assert_eq!(book.ore_for_fuel(1), 165);
     }
 
 }
