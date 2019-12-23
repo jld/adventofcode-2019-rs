@@ -1,6 +1,7 @@
 use std::io::{stdin, prelude::*};
 use std::iter::Iterator;
 
+type Digit = u8;
 type Num = i32;
 
 #[derive(Debug, Clone)]
@@ -41,34 +42,37 @@ impl Iterator for ThePattern {
     }
 }
 
-fn fft1(src: &[Num], idx: usize) -> Num {
-    src.iter()
-       .zip(ThePattern::new(idx))
-       .map(|(&a, b)| a * b)
-       .sum::<Num>()
-        .abs() % 10
+fn last_digit(n: Num) -> Digit {
+    (n.abs() % 10) as Digit
 }
 
-fn fft(src: &[Num]) -> Vec<Num> {
+fn fft1(src: &[Digit], idx: usize) -> Digit {
+    last_digit(src.iter()
+               .zip(ThePattern::new(idx))
+               .map(|(&d, c)| (d as Num) * c)
+               .sum())
+}
+
+fn fft(src: &[Digit]) -> Vec<Digit> {
     (0..src.len()).map(|i| fft1(src, i)).collect()
 }
 
-fn of_digit(ch: char) -> Num {
+fn of_digit(ch: char) -> Digit {
     let u = (ch as u32) - ('0' as u32);
     assert!(u < 10);
-    u as Num
+    u as Digit
 }
 
-fn to_digit(i: Num) -> char {
-    assert!(i >= 0 && i <= 9);
-    (('0' as u8) + (i as u8)) as char
+fn to_digit(i: Digit) -> char {
+    assert!(i <= 9);
+    (('0' as u8) + i) as char
 }
     
-fn unpack(src: &str) -> Vec<Num> {
+fn unpack(src: &str) -> Vec<Digit> {
     src.chars().map(of_digit).collect()
 }
 
-fn repack(src: &[Num]) -> String {
+fn repack(src: &[Digit]) -> String {
     src.iter().cloned().map(to_digit).collect()
 }
 
@@ -142,3 +146,13 @@ mod test {
         }
     }
 }
+
+/*
+
++0-0 +0-0
+0++0 0--0
+00++ +000
+000+ +++0
+
+
+*/
