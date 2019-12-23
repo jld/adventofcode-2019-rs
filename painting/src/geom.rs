@@ -119,6 +119,15 @@ impl Dir {
             _ => None,
         }
     }
+
+    pub fn rev(self) -> Dir {
+        match self {
+            Dir::Rt => Dir::Lf,
+            Dir::Up => Dir::Dn,
+            Dir::Lf => Dir::Rt,
+            Dir::Dn => Dir::Up,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -229,15 +238,6 @@ mod test {
         return true;
     }
 
-    fn dir_rev(d: Dir) -> Dir {
-        match d {
-            Dir::Rt => Dir::Lf,
-            Dir::Up => Dir::Dn,
-            Dir::Lf => Dir::Rt,
-            Dir::Dn => Dir::Up,
-        }
-    }
-
     fn vec_rev<T>(mut v: Vec<T>) -> Vec<T> {
         v.reverse();
         v
@@ -255,7 +255,7 @@ mod test {
 
     #[quickcheck]
     fn selftest_dir_rev_rev(d: Dir) -> bool {
-        dir_rev(dir_rev(d)) == d
+        d.rev().rev() == d
     }
 
     #[quickcheck]
@@ -265,7 +265,7 @@ mod test {
 
     #[quickcheck]
     fn qc_mov_len2(d: Dir, l: Len, e: Dir, m: Len) -> bool {
-        (d.to_move() * l + e.to_move() * m).len() == l + m || e == dir_rev(d)
+        (d.to_move() * l + e.to_move() * m).len() == l + m || e == d.rev()
     }
 
     #[quickcheck]
@@ -291,7 +291,7 @@ mod test {
     #[quickcheck]
     fn qc_walk_rev(p: Point, d: Dir, l: Len) -> bool {
         let q = endpt(p, d, l);
-        let e = dir_rev(d);
+        let e = d.rev();
         let fwd: Vec<_> = iter::once(p).chain(p.walk(d, l)).collect();
         let rev: Vec<_> = iter::once(q).chain(q.walk(e, l)).collect();
         vec_rev(rev) == fwd
@@ -309,7 +309,7 @@ mod test {
 
     #[quickcheck]
     fn qc_walk2_unique(p: Point, d0: Dir, l0: Len, d1: Dir, l1: Len) -> bool {
-        is_unique(p.walk_many([(d0, l0), (d1, l1)].iter().cloned())) || d1 == dir_rev(d0)
+        is_unique(p.walk_many([(d0, l0), (d1, l1)].iter().cloned())) || d1 == d0.rev()
     }
 
     #[quickcheck]
@@ -318,7 +318,7 @@ mod test {
             return true;
         }
         let q = dls.iter().fold(p, |q, &(d, l)| endpt(q, d, l));
-        let els = dls.clone().into_iter().rev().map(|(d, l)| (dir_rev(d), l));
+        let els = dls.clone().into_iter().rev().map(|(d, l)| (d.rev(), l));
         let fwd: Vec<_> = iter::once(p).chain(p.walk_many(dls)).collect();
         let rev: Vec<_> = iter::once(q).chain(q.walk_many(els)).collect();
         vec_rev(rev) == fwd
