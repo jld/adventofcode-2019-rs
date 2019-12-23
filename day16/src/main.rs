@@ -95,7 +95,7 @@ fn part2(src: &[Digit]) -> Option<Vec<Digit>> {
     for _i in 0..100 {
         buf = tri_sum(&buf);
     }
-    let mut result = buf[..8].to_owned();
+    let mut result = buf[buf.len()-8..].to_owned();
     result.reverse();
     Some(result)
 }
