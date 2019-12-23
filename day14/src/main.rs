@@ -113,5 +113,25 @@ mod test {
         let mut bench = Bench::new();
         bench.obtain(&book, Thing { quantity: 1, substance: "FUEL".to_owned() });
         assert_eq!(bench.ore_used, 31);
+
+        let leftovers: Vec<(String, Amount)> =
+            bench.leftovers.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        assert_eq!(leftovers, vec![("A".to_owned(), 2)]);
+    }
+
+    #[test]
+    fn example2() {
+        let book = compile(
+            &[(&[(9, "ORE")], (2, "A")),
+              (&[(8, "ORE")], (3, "B")),
+              (&[(7, "ORE")], (5, "C")),
+              (&[(3, "A"), (4, "B")], (1, "AB")),
+              (&[(5, "B"), (7, "C")], (1, "BC")),
+              (&[(4, "C"), (1, "A")], (1, "CA")),
+              (&[(2, "AB"), (3, "BC"), (4, "CA")], (1, "FUEL"))]);
+        
+        let mut bench = Bench::new();
+        bench.obtain(&book, Thing { quantity: 1, substance: "FUEL".to_owned() });
+        assert_eq!(bench.ore_used, 165);
     }
 }
