@@ -52,6 +52,16 @@ fn fft(src: &[Num]) -> Vec<Num> {
     (0..src.len()).map(|i| fft1(src, i)).collect()
 }
 
+fn of_digit(ch: char) -> Num {
+    let u = (ch as u32) - ('0' as u32);
+    assert!(u < 10);
+    u as Num
+}
+
+fn unpack(src: &str) -> Vec<Num> {
+    src.chars().map(of_digit).collect()
+}
+
 fn main() {
     println!("Hello, world!");
 }
@@ -79,15 +89,20 @@ mod test {
 
     #[test]
     fn small_example() {
-        let s0 = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let s0 = unpack("12345678");
         let s1 = fft(&s0);
-        assert_eq!(s1, vec![4, 8, 2, 2, 6, 1, 5, 8]);
+        assert_eq!(s1, unpack("48226158"));
         let s2 = fft(&s1);
-        assert_eq!(s2, vec![3, 4, 0, 4, 0, 4, 3, 8]);
+        assert_eq!(s2, unpack("34040438"));
         let s3 = fft(&s2);
-        assert_eq!(s3, vec![0, 3, 4, 1, 5, 5, 1, 8]);
+        assert_eq!(s3, unpack("03415518"));
         let s4 = fft(&s3);
-        assert_eq!(s4, vec![0, 1, 0, 2, 9, 4, 9, 8]);
+        assert_eq!(s4, unpack("01029498"));
+    }
+
+    #[test]
+    fn test_unpack() {
+        assert_eq!(unpack("0123456789"), vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 
 }
