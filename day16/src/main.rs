@@ -1,3 +1,4 @@
+use std::io::{stdin, prelude::*};
 use std::iter::Iterator;
 
 type Num = i32;
@@ -58,12 +59,27 @@ fn of_digit(ch: char) -> Num {
     u as Num
 }
 
+fn to_digit(i: Num) -> char {
+    assert!(i >= 0 && i <= 9);
+    (('0' as u8) + (i as u8)) as char
+}
+    
 fn unpack(src: &str) -> Vec<Num> {
     src.chars().map(of_digit).collect()
 }
 
+fn repack(src: &[Num]) -> String {
+    src.iter().cloned().map(to_digit).collect()
+}
+
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let line = stdin.lock().lines().next().expect("no input").expect("I/O error");
+    let mut thing = unpack(&line);
+    for _i in 0..100 {
+        thing = fft(&thing);
+    }
+    println!("{}", repack(&thing[..8]));
 }
 
 
@@ -103,6 +119,11 @@ mod test {
     #[test]
     fn test_unpack() {
         assert_eq!(unpack("0123456789"), vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn test_repack() {
+        assert_eq!(repack(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), "0123456789".to_owned());
     }
 
     #[test]
