@@ -134,4 +134,33 @@ mod test {
         bench.obtain(&book, Thing { quantity: 1, substance: "FUEL".to_owned() });
         assert_eq!(bench.ore_used, 165);
     }
+
+    #[test]
+    fn sufficiency() {
+        let book = compile(
+            &[(&[(2, "ORE")], (2, "A")),
+              (&[(2, "ORE")], (2, "B")),
+              (&[(1, "A"), (1, "B")], (1, "AB")),
+              (&[(1, "B"), (1, "A")], (1, "BA")),
+              (&[(1, "AB"), (1, "BA")], (1, "FUEL"))]);
+        
+        let mut bench = Bench::new();
+        bench.obtain(&book, Thing { quantity: 1, substance: "FUEL".to_owned() });
+        assert_eq!(bench.ore_used, 4);
+    }
+
+    #[test]
+    fn elegant_sufficiency() {
+        let book = compile(
+            &[(&[(3, "ORE")], (3, "A")),
+              (&[(3, "ORE")], (3, "B")),
+              (&[(1, "A"), (1, "B")], (1, "AB")),
+              (&[(1, "B"), (1, "A")], (1, "BA")),
+              (&[(1, "AB"), (1, "BA")], (1, "FUEL"))]);
+ 
+        let mut bench = Bench::new();
+        bench.obtain(&book, Thing { quantity: 1, substance: "FUEL".to_owned() });
+        assert_eq!(bench.ore_used, 6);
+    }
+
 }
