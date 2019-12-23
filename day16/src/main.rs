@@ -99,8 +99,9 @@ fn part2(src: &[Digit]) -> Option<Vec<Digit>> {
     // repeating unit) added.  This generalizes to arbitrarily long
     // repetition and multiple layers of tri_sum.
     //
-    // But that's not needed here; this is already fast enough (and
-    // compact enough) without even using rustc optimization.
+    // But that's not needed here; this already runs in seconds
+    // without rustc optimization and milliseconds with it, nor is
+    // memory usage a problem.
     for _i in 0..100 {
         buf = tri_sum(&buf);
     }
@@ -140,11 +141,17 @@ fn repack(src: &[Digit]) -> String {
 fn main() {
     let stdin = stdin();
     let line = stdin.lock().lines().next().expect("no input").expect("I/O error");
-    let mut thing = unpack(&line);
-    for _i in 0..100 {
-        thing = fft(&thing);
+    let message = unpack(&line);
+    let mut p1buf = fft(&message);
+    for _i in 1..100 {
+        p1buf = fft(&p1buf);
     }
-    println!("{}", repack(&thing[..8]));
+    println!("{}", repack(&p1buf[..8]));
+    if let Some(result) = part2(&message) {
+        println!("{}", repack(&result));
+    } else {
+        println!("Xmas miracle failed. )-:");
+    }
 }
 
 
