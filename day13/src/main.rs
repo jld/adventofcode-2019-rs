@@ -194,6 +194,41 @@ impl Drop for TermDev {
     }
 }
 
+struct BotDev {
+    cmd: CmdBuf,
+    ball_x: Word,
+    paddle_x: Word,
+    status: Word,
+}
+
+impl BotDev {
+    fn new() -> Self {
+        Self {
+            cmd: CmdBuf::new(),
+            ball_x: -1,
+            paddle_x: -1,
+            status: -1,
+        }
+    }
+}
+
+impl Device for BotDev {
+    fn output(&mut self, val: Word) -> Result<(), IOError> {
+        Ok(match self.cmd.handle(val)? {
+            Cmd::None => (),
+            Cmd::Status(status) => self.status = status,
+            Cmd::Draw(x, _y, Tile::Ball) => self.ball_x = x,
+            Cmd::Draw(x, _y, Tile::HPad) => self.paddle_x = x,
+            Cmd::Draw(..) => (),
+        })
+    }
+
+    fn input(&mut self) -> Result<Word, IOError> {
+        Ok((self.ball_x - self.paddle_x).signum())
+    }
+}
+
+
 fn main() {
     // I really should clean up all this code duplication....
     let stdin = stdin();
@@ -201,7 +236,7 @@ fn main() {
     let mut cpu = Computer::from_str(&prog).expect("parse error");
     std::mem::drop(stdin);
 
-    let cmd = args().nth(1).expect("need argument: blocks | play");
+    let cmd = args().nth(1).expect("need argument: blocks | play | bot");
     if cmd == "blocks" {
         let mut dev = ScreenDev::new();
         cpu.run(&mut dev).expect("runtime error");
@@ -214,6 +249,11 @@ fn main() {
         let mut dev = TermDev::new(BufReader::new(tty_in), BufWriter::new(tty_out));
         cpu.write(0, 2).unwrap();
         cpu.run(&mut dev).expect("runtime error");
+    } else if cmd == "bot" {
+        let mut dev = BotDev::new();
+        cpu.write(0, 2).unwrap();
+        cpu.run(&mut dev).expect("runtime error");
+        println!("{}", dev.status);
     } else {
         panic!("bad command {}", cmd);
     }
