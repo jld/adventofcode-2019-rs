@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::io::{stdin, prelude::*};
+use std::iter::FromIterator;
 use std::str::FromStr;
 
 type Amount = u64;
@@ -63,6 +65,29 @@ impl Book {
     }
 }
 
+impl<'s> FromIterator<&'s str> for Book {
+    fn from_iter<I>(lines: I) -> Self
+        where I: IntoIterator<Item = &'s str>
+    {
+        let mut this = Book::new();
+        for line in lines {
+            this.add(Reaction::from_str(line))
+        }
+        this
+    }
+}
+impl FromIterator<String> for Book {
+    fn from_iter<I>(lines: I) -> Self
+        where I: IntoIterator<Item = String>
+    {
+        let mut this = Book::new();
+        for line in lines {
+            this.add(Reaction::from_str(&line))
+        }
+        this
+    }
+}
+
 impl Bench {
     fn new() -> Self {
         Self {
@@ -103,7 +128,16 @@ impl Bench {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let book: Book =
+        stdin.lock()
+             .lines()
+             .map(|r| r.expect("I/O error reading stdin"))
+             .collect();
+
+    let mut bench = Bench::new();
+    bench.get_fuel(&book);
+    println!("{}", bench.ore_used);
 }
 
 #[cfg(test)]
@@ -200,10 +234,7 @@ mod test {
               "5 B, 7 C => 1 BC",
               "4 C, 1 A => 1 CA",
               "2 AB, 3 BC, 4 CA => 1 FUEL"];
-        let mut book = Book::new();
-        for &line in TEXT {
-            book.add(Reaction::from_str(line));
-        }
+        let book = TEXT.iter().cloned().collect();
         let mut bench = Bench::new();
         bench.get_fuel(&book);
         assert_eq!(bench.ore_used, 165);
