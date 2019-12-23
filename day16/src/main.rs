@@ -57,6 +57,7 @@ fn fft(src: &[Digit]) -> Vec<Digit> {
     (0..src.len()).map(|i| fft1(src, i)).collect()
 }
 
+// Notice anything about the bottom half of the example matrices?
 fn tri_sum(src: &[Digit]) -> Vec<Digit> {
     let mut last = 0;
     let mut acc = vec![];
@@ -92,6 +93,14 @@ fn part2(src: &[Digit]) -> Option<Vec<Digit>> {
     buf.truncate(size);
     assert_eq!(buf.len(), size);
 
+    // This could be optimized further: when tri_sum gets to the
+    // second repetition of the sequence, it's just doing the same
+    // thing it did the first time, but with an offset (the sum of the
+    // repeating unit) added.  This generalizes to arbitrarily long
+    // repetition and multiple layers of tri_sum.
+    //
+    // But that's not needed here; this is already fast enough (and
+    // compact enough) without even using rustc optimization.
     for _i in 0..100 {
         buf = tri_sum(&buf);
     }
