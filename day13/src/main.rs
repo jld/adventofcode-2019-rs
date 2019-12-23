@@ -25,16 +25,40 @@ impl Tile {
     }
 }
 
+#[derive(Debug, Clone)]
+struct CmdBuf {
+    buf: Vec<Word>,
+}
+
+impl CmdBuf {
+    fn new() -> Self { Self { buf: vec![] } }
+
+    fn handle(&mut self, val: Word) -> Result<Option<(Word, Word, Tile)>, IOError> {
+        debug_assert!(self.buf.len() < 3);
+        self.buf.push(val);
+        Ok(if self.buf.len() == 3 {
+            let x = self.buf[0];
+            let y = self.buf[1];
+            let t = Tile::from_word(self.buf[2]).ok_or(IOError)?;
+            self.buf.clear();
+            Some((x, y, t))
+        } else {
+            None
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
 struct ScreenDev {
     tiles: HashMap<(Word, Word), Tile>,
-    cmd: Vec<Word>,
+    cmd: CmdBuf
 }
 
 impl ScreenDev {
     fn new() -> Self {
         Self {
             tiles: HashMap::new(),
-            cmd: vec![],
+            cmd: CmdBuf::new(),
         }
     }
 }
@@ -43,12 +67,8 @@ impl Device for ScreenDev {
     fn input(&mut self) -> Result<Word, IOError> { Err(IOError) }
 
     fn output(&mut self, val: Word) -> Result<(), IOError> {
-        debug_assert!(self.cmd.len() < 3);
-        self.cmd.push(val);
-        Ok(if self.cmd.len() == 3 {
-            let tile = Tile::from_word(self.cmd[2]).ok_or(IOError)?;
-            self.tiles.insert((self.cmd[0], self.cmd[1]), tile);
-            self.cmd.clear();
+        Ok(if let Some((x, y, tile)) = self.cmd.handle(val)? {
+            self.tiles.insert((x, y), tile);
         })
     }
 }

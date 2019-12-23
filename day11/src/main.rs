@@ -78,7 +78,6 @@ impl Device for PaintDev {
     }
 }
 
-
 fn main() {
     let stdin = stdin();
     let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
