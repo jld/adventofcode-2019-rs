@@ -105,4 +105,19 @@ mod test {
         assert_eq!(unpack("0123456789"), vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 
+    #[test]
+    fn large_examples() {
+        const CASES: &[(&str, &str)] = &[
+            ("80871224585914546619083218645595", "24176176"),
+            ("19617804207202209144916044189917", "73745418"),
+            ("69317163492948606335995924319873", "52432133")];
+        for &(src, dst) in CASES {
+            let exp = unpack(dst);
+            let mut got = unpack(src);
+            for _i in 0..100 {
+                got = fft(&got);
+            }
+            assert_eq!(&got[..8], &exp[..]);
+        }
+    }
 }
