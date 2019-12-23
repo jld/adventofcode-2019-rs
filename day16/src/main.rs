@@ -39,7 +39,18 @@ impl Iterator for ThePattern {
         })
     }
 }
-    
+
+fn fft1(src: &[Num], idx: usize) -> Num {
+    src.iter()
+       .zip(ThePattern::new(idx))
+       .map(|(&a, b)| a * b)
+       .sum::<Num>()
+        .abs() % 10
+}
+
+fn fft(src: &[Num]) -> Vec<Num> {
+    (0..src.len()).map(|i| fft1(src, i)).collect()
+}
 
 fn main() {
     println!("Hello, world!");
@@ -64,6 +75,19 @@ mod test {
 
         let p3: Vec<_> = ThePattern::new(2).take(8).collect();
         assert_eq!(p3, vec![0, 0, 1, 1, 1, 0, 0, 0]);
+    }
+
+    #[test]
+    fn small_example() {
+        let s0 = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let s1 = fft(&s0);
+        assert_eq!(s1, vec![4, 8, 2, 2, 6, 1, 5, 8]);
+        let s2 = fft(&s1);
+        assert_eq!(s2, vec![3, 4, 0, 4, 0, 4, 3, 8]);
+        let s3 = fft(&s2);
+        assert_eq!(s3, vec![0, 3, 4, 1, 5, 5, 1, 8]);
+        let s4 = fft(&s3);
+        assert_eq!(s4, vec![0, 1, 0, 2, 9, 4, 9, 8]);
     }
 
 }
