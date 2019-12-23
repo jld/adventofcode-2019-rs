@@ -57,6 +57,49 @@ fn fft(src: &[Digit]) -> Vec<Digit> {
     (0..src.len()).map(|i| fft1(src, i)).collect()
 }
 
+fn tri_sum(src: &[Digit]) -> Vec<Digit> {
+    let mut last = 0;
+    let mut acc = vec![];
+    for &d in src.iter() {
+        last += d;
+        if last > 9 {
+            last -= 10;
+        }
+        acc.push(last);
+    }
+    return acc;
+}
+
+fn part2(src: &[Digit]) -> Option<Vec<Digit>> {
+    let whence = to_actual_num(&src[..7]);
+    let n = src.len();
+
+    // Expect a Christmas miracle:
+    if whence < 5000 * n {
+        return None;
+    }
+    assert!(whence < 10000 * n);
+    let how_many = 10000 - (whence / n);
+    let size = 10000 * n - whence;
+
+    let mut buf = vec![];
+    let mut one = src.to_owned();
+    one.reverse();
+    for _i in 0..how_many {
+        buf.extend_from_slice(&one);
+    }
+    std::mem::drop(one);
+    buf.truncate(size);
+    assert_eq!(buf.len(), size);
+
+    for _i in 0..100 {
+        buf = tri_sum(&buf);
+    }
+    let mut result = buf[..8].to_owned();
+    result.reverse();
+    Some(result)
+}
+
 fn of_digit(ch: char) -> Digit {
     let u = (ch as u32) - ('0' as u32);
     assert!(u < 10);
@@ -66,6 +109,15 @@ fn of_digit(ch: char) -> Digit {
 fn to_digit(i: Digit) -> char {
     assert!(i <= 9);
     (('0' as u8) + i) as char
+}
+
+fn to_actual_num(ds: &[Digit]) -> usize {
+    let mut acc = 0;
+    for &d in ds.iter() {
+        acc *= 10;
+        acc += d as usize;
+    }
+    return acc;
 }
     
 fn unpack(src: &str) -> Vec<Digit> {
@@ -145,14 +197,25 @@ mod test {
             assert_eq!(&got[..8], &exp[..]);
         }
     }
+
+    #[test]
+    fn test_tri_sum() {
+        assert_eq!(tri_sum(&[8, 7, 6, 5]), vec![8, 5, 1, 6]);
+        assert_eq!(tri_sum(&[8, 5, 1, 6]), vec![8, 3, 4, 0]);
+        assert_eq!(tri_sum(&[8, 3, 4, 0]), vec![8, 1, 5, 5]);
+        assert_eq!(tri_sum(&[8, 1, 5, 5]), vec![8, 9, 4, 9]);
+    }
+
+    #[test]
+    fn part2_examples() {
+        const CASES: &[(&str, &str)] = &[
+            ("03036732577212944063491565474664", "84462026"),
+            ("02935109699940807407585447034323", "78725270"),
+            ("03081770884921959731165446850517", "53553731")];
+        for &(src, dst) in CASES {
+            let src = unpack(src);
+            let exp = unpack(dst);
+            assert_eq!(&part2(&src).unwrap()[..], &exp[..]);
+        }
+    }
 }
-
-/*
-
-+0-0 +0-0
-0++0 0--0
-00++ +000
-000+ +++0
-
-
-*/
