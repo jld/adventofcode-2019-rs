@@ -103,7 +103,7 @@ impl Device for SearchDev {
     }
 }
 
-fn distance_to(open: &PointSet, start: Point, there: Point) -> Option<usize> {
+fn distance_to(open: &PointSet, start: Point, there: Option<Point>) -> Option<usize> {
     let mut open = open.clone();
     assert!(open.remove(start));
     let mut last = vec![start];
@@ -113,7 +113,7 @@ fn distance_to(open: &PointSet, start: Point, there: Point) -> Option<usize> {
         for from in last {
             for &dir in DIRS {
                 let unto = from + dir.to_move();
-                if unto == there {
+                if Some(unto) == there {
                     return Some(dist);
                 }
                 if !open.remove(unto) {
@@ -125,7 +125,11 @@ fn distance_to(open: &PointSet, start: Point, there: Point) -> Option<usize> {
         last = next;
         dist += 1;
     }
-    None
+    if there.is_none() {
+        Some(dist - 2)
+    } else {
+        None
+    }
 }
 
 fn main() {
@@ -141,5 +145,6 @@ fn main() {
     };
     dev.print();
     let ox = dev.oxygen.expect("gasp!");
-    println!("Distance: {}", distance_to(&dev.open, Point::origin(), ox).expect("no path?"));
+    println!("Distance: {}", distance_to(&dev.open, Point::origin(), Some(ox)).expect("no path?"));
+    println!("Oxygen Time: {}", distance_to(&dev.open, ox, None).unwrap());
 }
