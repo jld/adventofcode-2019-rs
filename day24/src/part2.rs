@@ -63,7 +63,8 @@ impl Grid {
     pub fn neighbors(&self) -> HashMap<Tile, u8> {
         let mut map = HashMap::new();
         let mut nbuf = vec![];
-        for tile in &self.0 {
+        for &tile in &self.0 {
+            let _ = map.entry(tile).or_insert(0u8);
             tile.neighbors(&mut nbuf);
             for &neigh in &nbuf {
                 *(map.entry(neigh).or_insert(0u8)) += 1;
