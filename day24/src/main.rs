@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+use std::env::args;
+
 type Grid = u32;
 const ALL: Grid = 0b11111_11111_11111_11111_11111;
 const SHRED: Grid = 0b01111_01111_01111_01111_01111;
@@ -29,10 +32,20 @@ fn bug_iter(grid: Grid) -> Grid {
     (grid & counts[1]) | (!grid & (counts[1] | counts[2]))
 }
 
-fn main() {
-    println!("Hello, world!");
-}
 
+fn main() {
+    let s = args().nth(1).expect("arg: in binary, backwards");
+    let g0 = Grid::from_str_radix(&s, 2).expect("binary parse error");
+    let mut g = g0;
+    let mut seen = HashSet::new();
+    loop {
+        if !seen.insert(g) {
+            println!("{}", g);
+            break;
+        }
+        g = bug_iter(g);
+    }
+}
 
 #[cfg(test)]
 mod test {
