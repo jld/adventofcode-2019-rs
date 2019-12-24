@@ -19,6 +19,7 @@ struct SearchDev {
     open: PointSet,
     here: Point,
     trail: Vec<Dir>,
+    backtrack: Option<Dir>,
     oxygen: Option<Point>,
     done: bool
 }
@@ -33,6 +34,7 @@ impl SearchDev {
             open,
             here,
             trail: vec![],
+            backtrack: None,
             oxygen: None,
             done: false
         }
@@ -70,7 +72,10 @@ impl Device for SearchDev {
 
         // Backtrack?
         if let Some(last) = self.trail.pop() {
-            return Ok(cmd_of_dir(last.rev()))
+            let back = last.rev();
+            assert!(self.backtrack.is_none());
+            self.backtrack = Some(back);
+            return Ok(cmd_of_dir(back));
         }
 
         // Must be done.
@@ -81,10 +86,13 @@ impl Device for SearchDev {
 
     fn output(&mut self, val: Word) -> Result<(), IOError> {
         if val == 0 {
-            self.trail.pop().unwrap();
-            assert!(self.walls.insert(self.here));
+            assert!(self.backtrack.is_none());
+            let attempt = self.trail.pop().unwrap().to_move();
+            assert!(self.walls.insert(self.here + attempt));
         } else if val <= 2 {
-            self.here += self.trail.last().unwrap().to_move();
+            let dir = self.backtrack.take().unwrap_or_else(|| *self.trail.last().unwrap());
+            self.here += dir.to_move();
+            self.open.insert(self.here);
             if val == 2 {
                 self.oxygen = Some(self.here);
             }
