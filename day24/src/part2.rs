@@ -1,6 +1,7 @@
 use std::borrow::Borrow;
-use std::iter::IntoIterator;
 use std::collections::{HashSet, HashMap};
+use std::iter::IntoIterator;
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Tile {
@@ -53,6 +54,11 @@ impl Tile {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Grid(HashSet<Tile>);
 
+impl Deref for Grid {
+    type Target = HashSet<Tile>;
+    fn deref(&self) -> &HashSet<Tile> { &self.0 }
+}
+
 impl Grid {
     pub fn new() -> Self { Grid(HashSet::new()) }
 
@@ -68,17 +74,6 @@ impl Grid {
             tile.neighbors(&mut nbuf);
             for &neigh in &nbuf {
                 *(map.entry(neigh).or_insert(0u8)) += 1;
-            }
-        }
-        map
-    }
-    pub fn neighbors_plus(&self) -> HashMap<Tile, Vec<Tile>> {
-        let mut map = HashMap::new();
-        let mut nbuf = vec![];
-        for &tile in &self.0 {
-            tile.neighbors(&mut nbuf);
-            for &neigh in &nbuf {
-                map.entry(neigh).or_insert_with(|| vec![]).push(tile)
             }
         }
         map
@@ -170,12 +165,12 @@ mod test {
                            tile1('T'), tile1('Y'), tile0(15), tile0(19)]);
     }
 
-    const INIT: &[&str] = 
-        &["....#",
-          "#..#.",
-          "#.?##",
-          "..#..",
-          "#...."];
+    const INIT: &[&[&str]] = 
+        &[&["....#",
+            "#..#.",
+            "#.?##",
+            "..#..",
+            "#...."]];
 
     const AFTER1: &[&[&str]] =
         &[&[".....",
@@ -263,31 +258,39 @@ mod test {
             "####.",
             "....."]];
 
-    #[test]
-    fn part2_evolution() {
-        let mut grid = Grid::new();
-        grid.add_plane(0, INIT.iter().cloned());
-
-        let mut after1 = Grid::new();
-        for (i, plane) in AFTER1.iter().enumerate() {
-            after1.add_plane(i as i8 - 1, plane.iter().cloned());
-        }
-
-        eprintln!("Neighbors: {:?}", grid.neighbors_plus());
-
-        for _i in 0..1 {
-            grid.next()
+    fn check_grid(blame: &str, got: &Grid, exp: &Grid) {
+        if got != exp {
+            for &pt in exp.iter().filter(|ppp| !got.contains(*ppp)) {
+                eprintln!("{}: expected {:?} but didn't get it", blame, pt);
+            }
+            for &pt in got.iter().filter(|ppp| !exp.contains(*ppp)) {
+                eprintln!("{}: got {:?} but didn't expect it", blame, pt);
+            }
+            panic!("{}: discrepancies; see above", blame);
         }
         
-        if grid != after1 {
-            for &pt in after1.0.iter().filter(|ppp| !grid.0.contains(*ppp)) {
-                eprintln!("expected {:?} but didn't get it", pt);
-            }
-            for &pt in grid.0.iter().filter(|ppp| !after1.0.contains(*ppp)) {
-                eprintln!("got {:?} but didn't expect it", pt);
-            }
-            panic!("discrepancies; see above");
+    }
+
+    fn parse_grid(offset: i8, stuff: &[&[&str]]) -> Grid {
+        let mut grid = Grid::new();
+        for (i, plane) in stuff.iter().enumerate() {
+            grid.add_plane(i as i8 - offset, plane.iter().cloned());
         }
+        grid
+    }
+
+    #[test]
+    fn part2_evolution() {
+        let mut grid = parse_grid(0, INIT);
+        let after1 = parse_grid(1, AFTER1);
+        let after10 = parse_grid(5, AFTER10);
+
+        grid.next();
+        check_grid("After 1", &grid, &after1);
+        for _i in 1..10 {
+            grid.next();
+        }
+        check_grid("After 10", &grid, &after10);
     }
 
     use ::quickcheck::*;
