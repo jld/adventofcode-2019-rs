@@ -1,3 +1,7 @@
+use std::borrow::Borrow;
+use std::iter::IntoIterator;
+use std::collections::{HashSet, HashMap};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Tile {
     x: u8, // 0..5
@@ -46,6 +50,70 @@ impl Tile {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Grid(HashSet<Tile>);
+
+impl Grid {
+    pub fn new() -> Self { Grid(HashSet::new()) }
+
+    pub fn add(&mut self, x: u8, y: u8, z: i8) {
+        self.0.insert(Tile::new(x, y, z).expect("bad coordinates"));
+    }
+
+    pub fn neighbors(&self) -> HashMap<Tile, u8> {
+        let mut map = HashMap::new();
+        let mut nbuf = vec![];
+        for tile in &self.0 {
+            tile.neighbors(&mut nbuf);
+            for &neigh in &nbuf {
+                *(map.entry(neigh).or_insert(0u8)) += 1;
+            }
+        }
+        map
+    }
+    pub fn neighbors_plus(&self) -> HashMap<Tile, Vec<Tile>> {
+        let mut map = HashMap::new();
+        let mut nbuf = vec![];
+        for &tile in &self.0 {
+            tile.neighbors(&mut nbuf);
+            for &neigh in &nbuf {
+                map.entry(neigh).or_insert_with(|| vec![]).push(tile)
+            }
+        }
+        map
+    }
+
+    pub fn next(&mut self) {
+        for (tile, nn) in self.neighbors() {
+            if self.0.contains(&tile) {
+                if nn != 1 {
+                    self.0.remove(&tile);
+                }
+            } else {
+                if nn == 1 || nn == 2 {
+                    self.0.insert(tile);
+                }
+            }
+        }
+    }
+
+    pub fn add_line(&mut self, y: u8, z: i8, line: &str) {
+        for (x, ch) in line.chars().enumerate() {
+            if ch == '#' {
+                self.add(x as u8, y, z)
+            }
+        }
+    }
+
+    pub fn add_plane<Line, Plane>(&mut self, z: i8, plane: Plane)
+        where Line: Borrow<str>,
+              Plane: IntoIterator<Item = Line>
+    {
+        for (y, line) in plane.into_iter().enumerate() {
+            self.add_line(y as u8, z, line.borrow())
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -99,5 +167,183 @@ mod test {
     fn neigh14() {
         neigh(tile0(14), &[tile0(9), tile1('E'), tile1('J'), tile1('O'),
                            tile1('T'), tile1('Y'), tile0(15), tile0(19)]);
+    }
+
+    const INIT: &[&str] = 
+        &["....#",
+          "#..#.",
+          "#.?##",
+          "..#..",
+          "#...."];
+
+    const AFTER1: &[&[&str]] =
+        &[&[".....",
+            "..#..",
+            "..?#.",
+            "..#..",
+            "....."],
+
+          &["#..#.",
+            "####.",
+            "##?.#",
+            "##.##",
+            ".##.."],
+
+          &["....#",
+            "....#",
+            "....#",
+            "....#",
+            "#####"]];
+
+    const AFTER10: &[&[&str]] =
+        &[&["..#..",
+            ".#.#.",
+            "..?.#",
+            ".#.#.",
+            "..#.."],
+
+          &["...#.",
+            "...##",
+            "..?..",
+            "...##",
+            "...#."],
+
+          &["#.#..",
+            ".#...",
+            "..?..",
+            ".#...",
+            "#.#.."],
+
+          &[".#.##",
+            "....#",
+            "..?.#",
+            "...##",
+            ".###."],
+
+          &["#..##",
+            "...##",
+            "..?..",
+            "...#.",
+            ".####"],
+
+          &[".#...",
+            ".#.##",
+            ".#?..",
+            ".....",
+            "....."],
+
+          &[".##..",
+            "#..##",
+            "..?.#",
+            "##.##",
+            "#####"],
+
+          &["###..",
+            "##.#.",
+            "#.?..",
+            ".#.##",
+            "#.#.."],
+
+          &["..###",
+            ".....",
+            "#.?..",
+            "#....",
+            "#...#"],
+
+          &[".###.",
+            "#..#.",
+            "#.?..",
+            "##.#.",
+            "....."],
+
+          &["####.",
+            "#..#.",
+            "#.?#.",
+            "####.",
+            "....."]];
+
+    #[test]
+    fn part2_evolution() {
+        let mut grid = Grid::new();
+        grid.add_plane(0, INIT.iter().cloned());
+
+        let mut after1 = Grid::new();
+        for (i, plane) in AFTER1.iter().enumerate() {
+            after1.add_plane(i as i8 - 1, plane.iter().cloned());
+        }
+
+        eprintln!("Neighbors: {:?}", grid.neighbors_plus());
+
+        for _i in 0..1 {
+            grid.next()
+        }
+        
+        if grid != after1 {
+            for &pt in after1.0.iter().filter(|ppp| !grid.0.contains(*ppp)) {
+                eprintln!("expected {:?} but didn't get it", pt);
+            }
+            for &pt in grid.0.iter().filter(|ppp| !after1.0.contains(*ppp)) {
+                eprintln!("got {:?} but didn't expect it", pt);
+            }
+            panic!("discrepancies; see above");
+        }
+    }
+
+    use ::quickcheck::*;
+    use quickcheck_macros::quickcheck;
+
+    impl Arbitrary for Tile {
+        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+            loop {
+                const Z_BOUND: i8 = 6;
+                let (x, y, z): (u8, u8, i8) = Arbitrary::arbitrary(g);
+                if let Some(tile) = Tile::new(x % 5, y % 5, z % Z_BOUND) {
+                    return tile;
+                }
+            }
+        }
+    }
+
+    #[quickcheck]
+    fn qc_neighbor_symmetric(t: Tile) -> bool {
+        for neigh in tile_bag(t) {
+            if !tile_bag(neigh).contains(&t) {
+                eprintln!("{:?} -> {:?} but not reverse", t, neigh);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    #[quickcheck]
+    fn qc_neighbor_count(t: Tile) -> bool {
+        let ns = tile_bag(t);
+        ns.len() == 4 || ns.len() == 8
+    }
+
+    fn octonary(t: Tile) -> bool {
+        tile_bag(t).len() == 8
+    }
+
+    #[quickcheck]
+    fn qc_topology_2nd(t: Tile) -> bool {
+        if octonary(t) {
+            tile_bag(t).iter().all(|&u| !octonary(u))
+        } else {
+            let os = tile_bag(t).iter().filter(|&&u| octonary(u)).count();
+            os == 1 || os == 2
+        }
+    }
+
+    #[quickcheck]
+    fn qc_buf_reuse(t: Tile, u: Tile) -> bool {
+        let mut b0 = vec![];
+        t.neighbors(&mut b0);
+        u.neighbors(&mut b0);
+
+        let mut b1 = vec![];
+        u.neighbors(&mut b1);
+        
+        b0 == b1
     }
 }
