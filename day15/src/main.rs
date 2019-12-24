@@ -1,4 +1,6 @@
-use intcode::{Computer, Device, IOError, Word};
+use std::io::{stdin, prelude::*};
+
+use intcode::{Computer, Device, IOError, Word, ExecError, exec::ExecFault};
 use painting::{PointSet, Point, Dir};
 
 const DIRS: &[Dir] = &[Dir::Up, Dir::Dn, Dir::Lf, Dir::Rt];
@@ -33,6 +35,23 @@ impl SearchDev {
             trail: vec![],
             oxygen: None,
             done: false
+        }
+    }
+
+    fn print(&self) {
+        let (low, high) = self.walls.bounding_box();
+        for y in (low.y..=high.y).rev() {
+            let mut line = String::new();
+            for x in low.x..high.x {
+                let xy = Point { x, y };
+                let ch = if self.oxygen == Some(xy) { '$' }
+                else if self.here == xy { '@' }
+                else if self.walls.contains(xy) { '#' }
+                else if self.open.contains(xy) { '.' }
+                else { ' ' };
+                line.push(ch);
+            }
+            println!("{}", line);
         }
     }
 }
@@ -102,5 +121,17 @@ fn distance_to(open: &PointSet, start: Point, there: Point) -> Option<usize> {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
+    let mut cpu = Computer::from_str(&prog).expect("parse error");
+
+    let mut dev = SearchDev::new();
+    match cpu.run(&mut dev) {
+        Ok(()) => panic!("Unexpected CPU halt"),
+        Err(ExecError { fault: ExecFault::IO(_), ..}) => assert!(dev.done),
+        e @ Err(_) => e.expect("runtime error"),
+    };
+    dev.print();
+    let ox = dev.oxygen.expect("gasp!");
+    println!("Distance: {}", distance_to(&dev.open, Point::origin(), ox).expect("no path?"));
 }
