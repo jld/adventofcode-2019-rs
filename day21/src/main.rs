@@ -1,3 +1,4 @@
+use std::env::args;
 use std::io::{stdin, stdout, Stdout, prelude::*};
 
 use intcode::{Computer, Device, IOError, Word};
@@ -44,13 +45,30 @@ fn main() {
     let prog = stdin.lock().lines().next().expect("no input").expect("I/O error reading stdin");
     let mut cpu = Computer::from_str(&prog).expect("parse error");
 
-    let mut dev = SpringProgDev::new(
+    let walkp = args().nth(1).map_or(true, |s| s != "run");
+
+    let spring = if walkp {
         &["NOT A J",
           "NOT B T",
           "OR T J",
           "NOT C T",
           "OR T J",
           "AND D J",
-          "WALK"]);
+          "WALK"][..]
+    } else {
+        &["NOT A J",
+          "NOT B T",
+          "OR T J",
+          "NOT C T",
+          "OR T J",
+          "AND D J",
+          "NOT E T",
+          "NOT T T",
+          "OR H T",
+          "AND T J",
+          "RUN"][..]
+    };
+
+    let mut dev = SpringProgDev::new(spring);
     cpu.run(&mut dev).expect("runtime error");
 }
