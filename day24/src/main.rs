@@ -1,3 +1,5 @@
+mod part2;
+
 use std::collections::HashSet;
 use std::env::args;
 
