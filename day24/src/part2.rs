@@ -49,6 +49,10 @@ impl Tile {
             out.extend((0..5).map(|ox| Tile::new(ox, 4, self.z.wrapping_add(1)).unwrap()));
         }
     }
+
+    pub fn xy_bit(self) -> u32 {
+        1u32 << (self.y * 5 + self.x)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -291,6 +295,7 @@ mod test {
             grid.next();
         }
         check_grid("After 10", &grid, &after10);
+        assert_eq!(grid.len(), 99);
     }
 
     use ::quickcheck::*;

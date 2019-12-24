@@ -1,7 +1,7 @@
 mod part2;
 
 use std::collections::HashSet;
-use std::env::args;
+use std::io::{stdin, prelude::*};
 
 type Grid = u32;
 const ALL: Grid = 0b11111_11111_11111_11111_11111;
@@ -36,9 +36,11 @@ fn bug_iter(grid: Grid) -> Grid {
 
 
 fn main() {
-    let s = args().nth(1).expect("arg: in binary, backwards");
-    let g0 = Grid::from_str_radix(&s, 2).expect("binary parse error");
-    let mut g = g0;
+    let mut grid = part2::Grid::new();
+    let stdin = stdin();
+    grid.add_plane(0, stdin.lock().lines().map(|r| r.expect("I/O error reading stdin")));
+    
+    let mut g = grid.iter().fold(0, |g, t| (g | t.xy_bit()));
     let mut seen = HashSet::new();
     loop {
         if !seen.insert(g) {
@@ -47,6 +49,11 @@ fn main() {
         }
         g = bug_iter(g);
     }
+
+    for _i in 0..200 {
+        grid.next();
+    }
+    println!("{}", grid.len());
 }
 
 #[cfg(test)]
