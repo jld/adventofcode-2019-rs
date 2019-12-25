@@ -1,7 +1,7 @@
 use std::io::{stdin, prelude::*};
 use std::str::FromStr;
 
-type Int = i32;
+type Int = i64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Deal {
@@ -41,6 +41,21 @@ fn follow_card(size: Int, deals: &[Deal], card: Int) -> Int {
     deals.iter().fold(card, |card, deal| deal.follow_card(size, card))
 }
 
+fn multishuf(size: Int, deals: &[Deal], mut reps: Int, mut card: Int) -> Int {
+    let card0 = card;
+    let mut n = 0;
+    while reps > 0 {
+        assert!(n < 100_000_000, "oh no not the bees");
+        card = follow_card(size, deals, card);
+        reps -= 1;
+        n += 1;
+        if card == card0 {
+            reps = reps % n;
+        }
+    }
+    return card;
+}
+
 fn main() {
     let stdin = stdin();
     let deals: Vec<_> = stdin.lock()
@@ -49,6 +64,7 @@ fn main() {
                              .collect();
 
     println!("{}", follow_card(10007, &deals, 2019));
+    println!("{}", multishuf(119315717514047, &deals, 101741582076661, 2020));
 }
 
 #[cfg(test)]
