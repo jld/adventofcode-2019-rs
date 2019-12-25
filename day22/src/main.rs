@@ -1,7 +1,7 @@
 use std::io::{stdin, prelude::*};
 use std::str::FromStr;
 
-type Int = i64;
+type Int = i128; // Need at least 96 bits, or else multiplication tricks.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Deal {
@@ -12,7 +12,7 @@ enum Deal {
 
 impl Deal {
     fn follow_card(self, size: Int, card: Int) -> Int {
-        self.compile(size).apply(size, card)
+        self.compile().apply(size, card)
     }
 
     fn from_str(s: &str) -> Self {
@@ -31,10 +31,10 @@ impl Deal {
         }
     }
 
-    fn compile(self, size: Int) -> LPerm {
+    fn compile(self) -> LPerm {
         match self {
             Deal::Rev =>
-                LPerm { m: -1, b: size - 1 },
+                LPerm { m: -1, b: -1 },
             Deal::Cut(off) =>
                 LPerm { m: 1, b: -off },
             Deal::Inc(inc) =>
@@ -50,13 +50,24 @@ struct LPerm {
 }
 
 impl LPerm {
+    fn id() -> LPerm { LPerm { m: 1, b: 0 } }
+
     fn apply(self, size: Int, card: Int) -> Int {
         (card * self.m + self.b).rem_euclid(size)
+    }
+
+    fn add(size: Int, p0: LPerm, p1: LPerm) -> LPerm {
+        // (c * m0 + b0) * m1 + b1 = c * m0 * m1 + b0 * m1 + b1
+        LPerm {
+            m: (p0.m * p1.m) % size,
+            b: (p0.b * p1.m + p1.b) % size,
+        }
     }
 }
 
 fn follow_card(size: Int, deals: &[Deal], card: Int) -> Int {
-    deals.iter().fold(card, |card, deal| deal.follow_card(size, card))
+    let lp = deals.iter().fold(LPerm::id(), |lp, deal| LPerm::add(size, lp, deal.compile()));
+    lp.apply(size, card)
 }
 
 fn main() {
