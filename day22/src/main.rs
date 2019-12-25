@@ -1,3 +1,6 @@
+use std::io::{stdin, prelude::*};
+use std::str::FromStr;
+
 type Int = i32;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,6 +19,22 @@ impl Deal {
             Deal::Inc(inc) => (card * inc) % size,
         }
     }
+
+    fn from_str(s: &str) -> Self {
+        if s == "deal into new stack" {
+            return Deal::Rev;
+        }
+        let mut tokens = s.rsplitn(2, ' ');
+        let num = Int::from_str(tokens.next().expect("empty line?")).expect("int parse error");
+        let cmd = tokens.next().expect("no space?");
+        if cmd == "cut" {
+            Deal::Cut(num)
+        } else if cmd == "deal with increment" {
+            Deal::Inc(num)
+        } else {
+            panic!("unknown card command {:?}", cmd)
+        }
+    }
 }
 
 fn follow_card(size: Int, deals: &[Deal], card: Int) -> Int {
@@ -23,7 +42,13 @@ fn follow_card(size: Int, deals: &[Deal], card: Int) -> Int {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let stdin = stdin();
+    let deals: Vec<_> = stdin.lock()
+                             .lines()
+                             .map(|r| Deal::from_str(&r.expect("I/O error reading stdin")))
+                             .collect();
+
+    println!("{}", follow_card(10007, &deals, 2019));
 }
 
 #[cfg(test)]
