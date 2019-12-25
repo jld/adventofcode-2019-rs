@@ -11,6 +11,7 @@ enum Deal {
 }
 
 impl Deal {
+    #[allow(dead_code)]
     fn follow_card(self, size: Int, card: Int) -> Int {
         self.compile().apply(size, card)
     }
@@ -63,11 +64,51 @@ impl LPerm {
             b: (p0.b * p1.m + p1.b) % size,
         }
     }
+
+    fn mul(size: Int, p: LPerm, n: u64) -> LPerm {
+        if n == 0 {
+            LPerm::id()
+        } else if n == 1 {
+            p
+        } else {
+            let almost = Self::mul(size, Self::add(size, p, p), n/2);
+            if n % 2 == 0 {
+                almost
+            } else {
+                Self::add(size, almost, p)
+            }
+        }
+    }
+
+    fn neg(size: Int, p: LPerm) -> LPerm {
+        let nm = mmi(size, p.m);
+        LPerm {
+            m: nm,
+            b: (-p.b * nm) % size
+        }
+    }
+}
+
+fn mmi(size: Int, thing: Int) -> Int {
+    let (mut r0, mut r1, mut t0, mut t1) = (size, thing, 0, 1);
+    while r1 != 0 {
+        let r2 = r0.rem_euclid(r1);
+        let t2 = t0 - t1 * r0.div_euclid(r1);
+        r0 = r1;
+        r1 = r2;
+        t0 = t1;
+        t1 = t2;
+    }
+    assert_eq!(r0, 1, "The shell of the world is cracked.  The bird flies to Abraxas.");
+    return t0;
+}
+
+fn compile_many(size: Int, deals: &[Deal]) -> LPerm {
+    deals.iter().fold(LPerm::id(), |lp, deal| LPerm::add(size, lp, deal.compile()))
 }
 
 fn follow_card(size: Int, deals: &[Deal], card: Int) -> Int {
-    let lp = deals.iter().fold(LPerm::id(), |lp, deal| LPerm::add(size, lp, deal.compile()));
-    lp.apply(size, card)
+    compile_many(size, deals).apply(size, card)
 }
 
 fn main() {
@@ -76,8 +117,16 @@ fn main() {
                              .lines()
                              .map(|r| Deal::from_str(&r.expect("I/O error reading stdin")))
                              .collect();
-
     println!("{}", follow_card(10007, &deals, 2019));
+
+    const BIG_SIZE: Int = 119315717514047;
+    const BIG_REPS: u64 = 101741582076661;
+
+    let lp = compile_many(BIG_SIZE, &deals);
+    let lpx = LPerm::mul(BIG_SIZE, lp, BIG_REPS);
+    let card = LPerm::neg(BIG_SIZE, lpx).apply(BIG_SIZE, 2020);
+    assert_eq!(lpx.apply(BIG_SIZE, card), 2020);
+    println!("{}", card);
 }
 
 #[cfg(test)]
