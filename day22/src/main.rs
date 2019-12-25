@@ -12,12 +12,7 @@ enum Deal {
 
 impl Deal {
     fn follow_card(self, size: Int, card: Int) -> Int {
-        debug_assert!(card >= 0 && card < size);
-        match self {
-            Deal::Rev => size - 1 - card,
-            Deal::Cut(off) => (card - off).rem_euclid(size),
-            Deal::Inc(inc) => (card * inc) % size,
-        }
+        self.compile(size).apply(size, card)
     }
 
     fn from_str(s: &str) -> Self {
@@ -35,25 +30,33 @@ impl Deal {
             panic!("unknown card command {:?}", cmd)
         }
     }
+
+    fn compile(self, size: Int) -> LPerm {
+        match self {
+            Deal::Rev =>
+                LPerm { m: -1, b: size - 1 },
+            Deal::Cut(off) =>
+                LPerm { m: 1, b: -off },
+            Deal::Inc(inc) =>
+                LPerm { m: inc, b: 0 },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct LPerm {
+    m: Int,
+    b: Int,
+}
+
+impl LPerm {
+    fn apply(self, size: Int, card: Int) -> Int {
+        (card * self.m + self.b).rem_euclid(size)
+    }
 }
 
 fn follow_card(size: Int, deals: &[Deal], card: Int) -> Int {
     deals.iter().fold(card, |card, deal| deal.follow_card(size, card))
-}
-
-fn multishuf(size: Int, deals: &[Deal], mut reps: Int, mut card: Int) -> Int {
-    let card0 = card;
-    let mut n = 0;
-    while reps > 0 {
-        assert!(n < 100_000_000, "oh no not the bees");
-        card = follow_card(size, deals, card);
-        reps -= 1;
-        n += 1;
-        if card == card0 {
-            reps = reps % n;
-        }
-    }
-    return card;
 }
 
 fn main() {
@@ -64,7 +67,6 @@ fn main() {
                              .collect();
 
     println!("{}", follow_card(10007, &deals, 2019));
-    println!("{}", multishuf(119315717514047, &deals, 101741582076661, 2020));
 }
 
 #[cfg(test)]
